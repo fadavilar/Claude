@@ -2,7 +2,14 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c6af7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Claude Code" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
   <title>Aprende Claude Code — Desde Cero</title>
   <style>
     :root {
@@ -571,18 +578,79 @@
       font-weight: 600;
       cursor: pointer;
     }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 700px) {
+      body { flex-direction: column; }
+
+      #sidebar {
+        width: 100%;
+        min-width: unset;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 52px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        position: relative;
+        z-index: 10;
+      }
+
+      #sidebar.open { max-height: 100vh; overflow-y: auto; }
+
+      #sidebar-header {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      #sidebar-header .logo { margin-bottom: 0; }
+      #sidebar-header p { display: none; }
+
+      #sidebar-toggle {
+        font-size: 20px;
+        color: var(--text-muted);
+        user-select: none;
+      }
+
+      #progress-bar-wrap { padding: 8px 16px; }
+      #lesson-list { padding: 8px; }
+
+      #main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+      #topbar {
+        padding: 10px 16px;
+        flex-shrink: 0;
+      }
+
+      #content {
+        padding: 20px 18px 40px;
+      }
+
+      .lesson-header h1 { font-size: 22px; }
+
+      #nav-buttons { gap: 6px; }
+      .nav-btn { padding: 6px 12px; font-size: 12px; }
+
+      .cmd-table { font-size: 12px; display: block; overflow-x: auto; }
+
+      .celebration-card { padding: 28px 24px; margin: 16px; }
+    }
   </style>
 </head>
 <body>
 
 <!-- Sidebar -->
 <div id="sidebar">
-  <div id="sidebar-header">
+  <div id="sidebar-header" onclick="toggleSidebar()">
     <div class="logo">
       <div class="icon">⚡</div>
       Claude Code
     </div>
     <p>Aprende desde cero, paso a paso</p>
+    <span id="sidebar-toggle">☰</span>
   </div>
 
   <div id="progress-bar-wrap">
@@ -1786,12 +1854,6 @@ function renderContent() {
   document.getElementById('next-btn').textContent = currentLesson === LESSONS.length - 1 ? '🏁 Finalizar' : 'Siguiente →';
 }
 
-function goTo(index) {
-  currentLesson = index;
-  renderSidebar();
-  renderContent();
-}
-
 function navigate(dir) {
   const next = currentLesson + dir;
   if (next >= 0 && next < LESSONS.length) {
@@ -1867,9 +1929,29 @@ function copyCode(btn) {
   });
 }
 
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('open');
+}
+
+function goTo(index) {
+  currentLesson = index;
+  renderSidebar();
+  renderContent();
+  // Close sidebar on mobile after selecting
+  document.getElementById('sidebar').classList.remove('open');
+}
+
 // Init
 renderSidebar();
 renderContent();
+
+// Register service worker for PWA / offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
 </script>
 </body>
 </html>

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0f0f14"/>
+
+  <!-- Terminal window chrome -->
+  <rect x="64" y="120" width="384" height="272" rx="16" fill="#16161e" stroke="#2a2a3a" stroke-width="3"/>
+
+  <!-- Window title bar -->
+  <rect x="64" y="120" width="384" height="44" rx="16" fill="#1e1e2a"/>
+  <rect x="64" y="148" width="384" height="16" fill="#1e1e2a"/>
+
+  <!-- Traffic lights -->
+  <circle cx="106" cy="142" r="8" fill="#f76c6c"/>
+  <circle cx="132" cy="142" r="8" fill="#f7a76c"/>
+  <circle cx="158" cy="142" r="8" fill="#56d6a0"/>
+
+  <!-- Title bar text dots -->
+  <rect x="200" y="136" width="112" height="12" rx="6" fill="#2a2a3a"/>
+
+  <!-- Code lines -->
+  <rect x="92" y="188" width="12" height="12" rx="2" fill="#7c6af7"/>
+  <rect x="112" y="188" width="80" height="12" rx="2" fill="#56d6a0"/>
+  <rect x="200" y="188" width="48" height="12" rx="2" fill="#f4c2a1"/>
+
+  <rect x="92" y="216" width="12" height="12" rx="2" fill="#7c6af7"/>
+  <rect x="112" y="216" width="120" height="12" rx="2" fill="#e2e2f0"/>
+
+  <rect x="92" y="244" width="12" height="12" rx="2" fill="#7c6af7"/>
+  <rect x="112" y="244" width="64" height="12" rx="2" fill="#a78bfa"/>
+  <rect x="184" y="244" width="96" height="12" rx="2" fill="#56d6a0"/>
+
+  <rect x="92" y="272" width="12" height="12" rx="2" fill="#7c6af7"/>
+  <rect x="112" y="272" width="48" height="12" rx="2" fill="#e2e2f0"/>
+
+  <!-- Cursor blink -->
+  <rect x="92" y="308" width="18" height="20" rx="2" fill="#7c6af7" opacity="0.9"/>
+
+  <!-- Lightning bolt overlay (top right) -->
+  <g transform="translate(340, 56)">
+    <circle cx="56" cy="56" r="52" fill="#7c6af7"/>
+    <polygon points="62,18 38,58 56,58 50,94 74,54 56,54" fill="white"/>
+  </g>
+</svg>
