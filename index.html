@@ -1,0 +1,2065 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c6af7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Claude Code" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <title>Aprende Claude Code — Desde Cero</title>
+  <style>
+    :root {
+      --bg: #0f0f14;
+      --surface: #16161e;
+      --surface2: #1e1e2a;
+      --border: #2a2a3a;
+      --accent: #7c6af7;
+      --accent2: #56d6a0;
+      --accent3: #f7a76c;
+      --text: #e2e2f0;
+      --text-muted: #888899;
+      --code-bg: #12121a;
+      --success: #56d6a0;
+      --warning: #f7a76c;
+      --danger: #f76c6c;
+      --radius: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    #app-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #inner-row {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #sidebar-header {
+      padding: 22px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #sidebar-header .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+
+    #sidebar-header .logo .icon {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+
+    #sidebar-header p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* progress bar */
+    #progress-bar-wrap {
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    #progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    #progress-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    #progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* lesson list */
+    #lesson-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px 10px;
+    }
+
+    #lesson-list::-webkit-scrollbar { width: 4px; }
+    #lesson-list::-webkit-scrollbar-track { background: transparent; }
+    #lesson-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .lesson-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin-bottom: 2px;
+    }
+
+    .lesson-item:hover { background: var(--surface2); }
+    .lesson-item.active { background: rgba(124,106,247,0.15); border: 1px solid rgba(124,106,247,0.3); }
+
+    .lesson-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .lesson-item.done .lesson-num {
+      background: var(--success);
+      color: #0f0f14;
+    }
+
+    .lesson-item.active .lesson-num {
+      background: var(--accent);
+      color: white;
+    }
+
+    .lesson-title-wrap { flex: 1; min-width: 0; }
+    .lesson-title-wrap .title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .lesson-title-wrap .subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .lesson-item.active .lesson-title-wrap .title { color: var(--accent); }
+
+    /* ── Main content ── */
+    #main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    #topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    #topbar .crumb {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    #topbar .crumb span { color: var(--accent); }
+
+    #nav-buttons { display: flex; gap: 8px; }
+
+    .nav-btn {
+      padding: 7px 16px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+
+    .nav-btn:hover { background: var(--border); }
+    .nav-btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+    .nav-btn.primary:hover { background: #6c5ae8; }
+    .nav-btn:disabled { opacity: 0.35; cursor: default; }
+
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 36px 48px;
+      max-width: 820px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    #content::-webkit-scrollbar { width: 5px; }
+    #content::-webkit-scrollbar-track { background: transparent; }
+    #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Content styles ── */
+    .lesson-header { margin-bottom: 32px; }
+
+    .lesson-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      background: rgba(124,106,247,0.12);
+      border: 1px solid rgba(124,106,247,0.25);
+      border-radius: 99px;
+      padding: 3px 10px;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .lesson-header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.3;
+      margin-bottom: 10px;
+      background: linear-gradient(135deg, var(--text), #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .lesson-header .desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 600px;
+    }
+
+    .section { margin-bottom: 32px; }
+
+    .section h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section h2::before {
+      content: '';
+      display: block;
+      width: 3px; height: 18px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .section p { color: var(--text-muted); margin-bottom: 12px; }
+    .section p strong { color: var(--text); }
+    .section ul, .section ol { padding-left: 20px; color: var(--text-muted); margin-bottom: 12px; }
+    .section li { margin-bottom: 6px; }
+    .section li strong { color: var(--text); }
+
+    /* code blocks */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.03);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .code-lang {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent2);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .copy-btn {
+      font-size: 11px;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 4px;
+      transition: all 0.15s;
+    }
+
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+    .copy-btn.copied { color: var(--success); }
+
+    .code-block pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    .code-block pre .comment { color: #555566; }
+    .code-block pre .cmd { color: var(--accent2); }
+    .code-block pre .flag { color: var(--warning); }
+    .code-block pre .str { color: #f4c2a1; }
+    .code-block pre .kw { color: var(--accent); }
+
+    /* inline code */
+    code {
+      background: rgba(124,106,247,0.12);
+      color: #c4b5fd;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+    }
+
+    /* callout boxes */
+    .callout {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      margin-bottom: 16px;
+      border-left: 3px solid;
+    }
+
+    .callout.tip { background: rgba(86,214,160,0.07); border-color: var(--success); }
+    .callout.warning { background: rgba(247,167,108,0.07); border-color: var(--warning); }
+    .callout.info { background: rgba(124,106,247,0.07); border-color: var(--accent); }
+    .callout.danger { background: rgba(247,108,108,0.07); border-color: var(--danger); }
+
+    .callout-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+    .callout-body { flex: 1; }
+    .callout-body strong { display: block; font-size: 13px; margin-bottom: 4px; color: var(--text); }
+    .callout-body p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+    /* command table */
+    .cmd-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .cmd-table th {
+      text-align: left;
+      padding: 9px 14px;
+      background: var(--surface2);
+      color: var(--text-muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cmd-table td {
+      padding: 9px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text-muted);
+      vertical-align: top;
+    }
+
+    .cmd-table td:first-child { color: var(--accent2); font-family: 'Cascadia Code', monospace; }
+    .cmd-table tr:last-child td { border-bottom: none; }
+
+    /* quiz */
+    .quiz {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .quiz h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quiz-options { display: flex; flex-direction: column; gap: 8px; }
+
+    .quiz-opt {
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-muted);
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .quiz-opt:hover { border-color: var(--accent); color: var(--text); }
+    .quiz-opt.correct { border-color: var(--success); background: rgba(86,214,160,0.08); color: var(--success); }
+    .quiz-opt.wrong { border-color: var(--danger); background: rgba(247,108,108,0.08); color: var(--danger); }
+    .quiz-opt .opt-letter {
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .quiz-opt.correct .opt-letter { background: var(--success); color: #0f0f14; }
+    .quiz-opt.wrong .opt-letter { background: var(--danger); color: white; }
+
+    .quiz-feedback {
+      margin-top: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    .quiz-feedback.show { display: block; }
+    .quiz-feedback.correct { background: rgba(86,214,160,0.08); color: var(--success); border: 1px solid rgba(86,214,160,0.2); }
+    .quiz-feedback.wrong { background: rgba(247,108,108,0.08); color: #ff9898; border: 1px solid rgba(247,108,108,0.2); }
+
+    /* step timeline */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; }
+
+    .step-item {
+      display: flex;
+      gap: 16px;
+      padding-bottom: 20px;
+      position: relative;
+    }
+
+    .step-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 15px; top: 34px;
+      width: 2px;
+      height: calc(100% - 20px);
+      background: var(--border);
+    }
+
+    .step-dot {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-muted);
+      flex-shrink: 0;
+      z-index: 1;
+    }
+
+    .step-content { flex: 1; padding-top: 5px; }
+    .step-content h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+    .step-content p { font-size: 13px; color: var(--text-muted); margin: 0; }
+
+    /* badge chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .chip {
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid;
+    }
+    .chip.blue { background: rgba(124,106,247,0.1); color: var(--accent); border-color: rgba(124,106,247,0.25); }
+    .chip.green { background: rgba(86,214,160,0.1); color: var(--accent2); border-color: rgba(86,214,160,0.25); }
+    .chip.orange { background: rgba(247,167,108,0.1); color: var(--warning); border-color: rgba(247,167,108,0.25); }
+
+    /* complete button */
+    #complete-btn {
+      margin-top: 32px;
+      padding: 13px 28px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border: none;
+      border-radius: var(--radius);
+      color: white;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    #complete-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,247,0.35); }
+    #complete-btn.done { background: linear-gradient(135deg, var(--success), #34d399); }
+    #complete-btn:disabled { opacity: 0.5; cursor: default; transform: none; box-shadow: none; }
+
+    /* celebration overlay */
+    #celebration {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+    }
+    #celebration.show { display: flex; }
+
+    .celebration-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px 48px;
+      text-align: center;
+      max-width: 420px;
+    }
+
+    .celebration-card .emoji { font-size: 56px; margin-bottom: 16px; }
+    .celebration-card h2 { font-size: 24px; font-weight: 800; margin-bottom: 8px; }
+    .celebration-card p { color: var(--text-muted); margin-bottom: 24px; }
+    .celebration-card button {
+      padding: 11px 28px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Mobile responsive ── */
+    @media (max-width: 700px) {
+      #inner-row { flex-direction: column; }
+      #install-banner { padding: 10px 14px; gap: 8px; }
+      #install-banner .ib-text span { display: none; }
+
+      #sidebar {
+        width: 100%;
+        min-width: unset;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        max-height: 52px;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+        position: relative;
+        z-index: 10;
+      }
+
+      #sidebar.open { max-height: 100vh; overflow-y: auto; }
+
+      #sidebar-header {
+        padding: 12px 16px;
+        cursor: pointer;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      #sidebar-header .logo { margin-bottom: 0; }
+      #sidebar-header p { display: none; }
+
+      #sidebar-toggle {
+        font-size: 20px;
+        color: var(--text-muted);
+        user-select: none;
+      }
+
+      #progress-bar-wrap { padding: 8px 16px; }
+      #lesson-list { padding: 8px; }
+
+      #main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+
+      #topbar {
+        padding: 10px 16px;
+        flex-shrink: 0;
+      }
+
+      #content {
+        padding: 20px 18px 40px;
+      }
+
+      .lesson-header h1 { font-size: 22px; }
+
+      #nav-buttons { gap: 6px; }
+      .nav-btn { padding: 6px 12px; font-size: 12px; }
+
+      .cmd-table { font-size: 12px; display: block; overflow-x: auto; }
+
+      .celebration-card { padding: 28px 24px; margin: 16px; }
+    }
+
+    /* ── Install banner ── */
+    #install-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, rgba(124,106,247,.18), rgba(86,214,160,.12));
+      border-bottom: 1px solid rgba(124,106,247,.3);
+      flex-shrink: 0;
+      animation: slideDown .3s ease;
+    }
+    #install-banner.visible { display: flex; }
+    @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    #install-banner .ib-left { display: flex; align-items: center; gap: 10px; }
+    #install-banner .ib-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    #install-banner .ib-text strong { display: block; font-size: 13px; color: var(--text); }
+    #install-banner .ib-text span { font-size: 12px; color: var(--text-muted); }
+    #install-banner .ib-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    #install-btn {
+      padding: 8px 18px; background: var(--accent); border: none;
+      border-radius: 7px; color: white; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    #install-btn:hover { background: #6c5ae8; transform: translateY(-1px); }
+    #dismiss-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: all .15s;
+    }
+    #dismiss-btn:hover { background: var(--border); color: var(--text); }
+  </style>
+</head>
+<body>
+
+<!-- Wrapper column -->
+<div id="app-wrap">
+
+<!-- Install banner -->
+<div id="install-banner">
+  <div class="ib-left">
+    <div class="ib-icon">⚡</div>
+    <div class="ib-text">
+      <strong>Instalar como app</strong>
+      <span>Funciona sin internet · Sin ocupar espacio</span>
+    </div>
+  </div>
+  <div class="ib-actions">
+    <button id="install-btn" onclick="triggerInstall()">📲 Instalar</button>
+    <button id="dismiss-btn" onclick="dismissBanner()" title="Cerrar">✕</button>
+  </div>
+</div>
+
+<!-- Inner row: sidebar + main -->
+<div id="inner-row">
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div id="sidebar-header" onclick="toggleSidebar()">
+    <div class="logo">
+      <div class="icon">⚡</div>
+      Claude Code
+    </div>
+    <p>Aprende desde cero, paso a paso</p>
+    <span id="sidebar-toggle">☰</span>
+  </div>
+
+  <div id="progress-bar-wrap">
+    <div id="progress-label">
+      <span>Progreso</span>
+      <span id="progress-text">0 / 10 lecciones</span>
+    </div>
+    <div id="progress-bar"><div id="progress-fill"></div></div>
+  </div>
+
+  <div id="lesson-list"></div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="topbar">
+    <div class="crumb" id="breadcrumb">Lección <span id="crumb-num">1</span> de 10</div>
+    <div id="nav-buttons">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">← Anterior</button>
+      <button class="nav-btn primary" id="next-btn" onclick="navigate(1)">Siguiente →</button>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<!-- Close inner-row and app-wrap -->
+</div></div>
+
+<!-- Celebration -->
+<div id="celebration">
+  <div class="celebration-card">
+    <div class="emoji">🎉</div>
+    <h2>¡Lección completada!</h2>
+    <p id="cel-msg">Sigue así, vas muy bien.</p>
+    <button onclick="closeCelebration()">Continuar →</button>
+  </div>
+</div>
+
+<script>
+const LESSONS = [
+  {
+    title: "¿Qué es Claude Code?",
+    subtitle: "Introducción",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">📖 Lección 1</div>
+        <h1>¿Qué es Claude Code?</h1>
+        <p class="desc">Entiende qué es Claude Code, para qué sirve y cómo encaja en tu flujo de trabajo.</p>
+      </div>
+
+      <div class="section">
+        <h2>Definición</h2>
+        <p>Claude Code es un <strong>agente de IA en la terminal</strong> creado por Anthropic. A diferencia de los chatbots web, Claude Code vive en tu máquina y puede <strong>leer archivos, escribir código, ejecutar comandos y hacer commits de git</strong> directamente.</p>
+        <div class="callout info">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <strong>Clave</strong>
+            <p>No es solo un chatbot — es un agente que toma acciones reales en tu proyecto.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>¿Qué puede hacer?</h2>
+        <div class="chips">
+          <div class="chip blue">Leer código</div>
+          <div class="chip blue">Escribir archivos</div>
+          <div class="chip green">Ejecutar comandos</div>
+          <div class="chip green">Correr tests</div>
+          <div class="chip orange">Hacer commits</div>
+          <div class="chip orange">Abrir PRs</div>
+        </div>
+        <ul>
+          <li><strong>Entender bases de código</strong> — analiza proyectos completos, no solo un archivo</li>
+          <li><strong>Resolver bugs</strong> — encuentra y arregla errores de manera autónoma</li>
+          <li><strong>Generar funcionalidades</strong> — escribe código nuevo basado en tu descripción</li>
+          <li><strong>Refactorizar</strong> — mejora código existente sin cambiar su comportamiento</li>
+          <li><strong>Git flow completo</strong> — stage, commit, push y PRs desde la terminal</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Comparación rápida</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Herramienta</th><th>Dónde vive</th><th>Puede actuar</th></tr></thead>
+          <tbody>
+            <tr><td>ChatGPT / Claude.ai</td><td>Navegador web</td><td>No (solo sugiere)</td></tr>
+            <tr><td>GitHub Copilot</td><td>IDE</td><td>Solo autocompletado</td></tr>
+            <tr><td>Claude Code ⚡</td><td>Tu terminal</td><td>Sí — escribe, ejecuta, commitea</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Quiz rápido</h2>
+        <div class="quiz" id="quiz-1">
+          <h3>🧠 ¿Cuál es la diferencia principal de Claude Code vs Claude.ai?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-1', this, false)">
+              <div class="opt-letter">A</div>
+              Claude Code es más inteligente y conoce más lenguajes
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-1', this, true)">
+              <div class="opt-letter">B</div>
+              Claude Code puede tomar acciones reales en tu computadora
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-1', this, false)">
+              <div class="opt-letter">C</div>
+              Claude Code es una extensión del navegador
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-1-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Instalación",
+    subtitle: "Setup inicial",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">⚙️ Lección 2</div>
+        <h1>Instalación y Setup</h1>
+        <p class="desc">Instala Claude Code y configura tu entorno en menos de 5 minutos.</p>
+      </div>
+
+      <div class="section">
+        <h2>Requisitos previos</h2>
+        <ul>
+          <li><strong>Node.js</strong> — versión 18 o superior</li>
+          <li><strong>npm</strong> — viene incluido con Node.js</li>
+          <li><strong>Cuenta en Anthropic</strong> — para autenticación</li>
+          <li>Acceso a terminal (Mac, Linux, Windows con WSL)</li>
+        </ul>
+        <div class="callout tip">
+          <div class="callout-icon">✅</div>
+          <div class="callout-body">
+            <strong>¿No tienes Node.js?</strong>
+            <p>Descárgalo desde nodejs.org. La versión LTS es suficiente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Paso 1 — Instalar</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Instalar Claude Code globalmente</span>
+<span class="cmd">npm</span> install <span class="flag">-g</span> @anthropic-ai/claude-code
+
+<span class="comment"># Verificar instalación</span>
+<span class="cmd">claude</span> <span class="flag">--version</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Paso 2 — Autenticarse</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Iniciar Claude Code (abre el navegador para login)</span>
+<span class="cmd">claude</span></pre>
+        </div>
+        <p>Al ejecutarlo por primera vez, se abrirá el navegador para que inicies sesión con tu cuenta de Anthropic. El token se guarda localmente de forma segura.</p>
+      </div>
+
+      <div class="section">
+        <h2>Paso 3 — Verificar que funciona</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Hacer una pregunta simple para probar</span>
+<span class="cmd">claude</span> <span class="flag">-p</span> <span class="str">"¿Cuánto es 2 + 2? Responde solo el número."</span></pre>
+        </div>
+        <p>Si ves <code>4</code> en la respuesta, ¡todo está funcionando!</p>
+      </div>
+
+      <div class="section">
+        <h2>Dónde se guardan las credenciales</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Las credenciales se guardan aquí (nunca las compartas)</span>
+~/.claude/credentials.json
+
+<span class="comment"># La configuración global está en</span>
+~/.claude/settings.json</pre>
+        </div>
+        <div class="callout warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-body">
+            <strong>Seguridad</strong>
+            <p>Nunca subas <code>~/.claude/credentials.json</code> a GitHub ni lo compartas con nadie.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-2">
+          <h3>🧠 ¿Qué hace <code>claude -p "texto"</code>?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-2', this, false)">
+              <div class="opt-letter">A</div>
+              Abre una sesión interactiva con ese texto como nombre
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-2', this, true)">
+              <div class="opt-letter">B</div>
+              Ejecuta una tarea directa sin sesión interactiva
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-2', this, false)">
+              <div class="opt-letter">C</div>
+              Configura el prompt del sistema
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-2-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Primera sesión",
+    subtitle: "Modo interactivo",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">🚀 Lección 3</div>
+        <h1>Tu primera sesión</h1>
+        <p class="desc">Aprende a usar el modo interactivo, navegar la sesión y dar instrucciones efectivas.</p>
+      </div>
+
+      <div class="section">
+        <h2>Iniciar una sesión</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Abrir sesión interactiva en el directorio actual</span>
+<span class="cmd">claude</span>
+
+<span class="comment"># Abrir sesión en un directorio específico</span>
+<span class="cmd">claude</span> <span class="flag">--dir</span> /ruta/a/mi/proyecto</pre>
+        </div>
+        <p>Verás el prompt <code>&gt;</code> esperando tu instrucción. Puedes escribir en lenguaje natural.</p>
+      </div>
+
+      <div class="section">
+        <h2>Ejemplos de instrucciones</h2>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-dot">1</div>
+            <div class="step-content">
+              <h4>Explorar el proyecto</h4>
+              <p>"Explícame qué hace este proyecto y cuál es su estructura principal"</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">2</div>
+            <div class="step-content">
+              <h4>Encontrar algo</h4>
+              <p>"¿Dónde se maneja la autenticación de usuarios?"</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">3</div>
+            <div class="step-content">
+              <h4>Arreglar un bug</h4>
+              <p>"La función calcularTotal() da resultados incorrectos con decimales. Arréglala."</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">4</div>
+            <div class="step-content">
+              <h4>Crear algo nuevo</h4>
+              <p>"Agrega un endpoint POST /api/users que valide email y guarde en la base de datos"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Atajos de teclado en la sesión</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Atajo</th><th>Acción</th></tr></thead>
+          <tbody>
+            <tr><td>Ctrl + C</td><td>Cancelar la respuesta en curso</td></tr>
+            <tr><td>Ctrl + D</td><td>Salir de la sesión</td></tr>
+            <tr><td>↑ / ↓</td><td>Navegar historial de mensajes</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Continuar la última sesión</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Retomar exactamente donde lo dejaste</span>
+<span class="cmd">claude</span> <span class="flag">--continue</span>
+
+<span class="comment"># Ver sesiones anteriores y elegir una</span>
+<span class="cmd">claude</span> <span class="flag">--resume</span></pre>
+        </div>
+        <div class="callout tip">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <strong>Sesiones persistentes</strong>
+            <p>Claude Code recuerda el contexto de tu sesión. Puedes retomar una conversación horas después y continuará con el mismo contexto.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-3">
+          <h3>🧠 ¿Cómo retomas el trabajo de tu sesión anterior?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-3', this, false)">
+              <div class="opt-letter">A</div>
+              <code>claude --restart</code>
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-3', this, true)">
+              <div class="opt-letter">B</div>
+              <code>claude --continue</code>
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-3', this, false)">
+              <div class="opt-letter">C</div>
+              <code>claude --load</code>
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-3-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Leyendo y editando código",
+    subtitle: "Operaciones con archivos",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">📁 Lección 4</div>
+        <h1>Leyendo y editando código</h1>
+        <p class="desc">Cómo Claude Code interactúa con tus archivos y entiende tu base de código.</p>
+      </div>
+
+      <div class="section">
+        <h2>Cómo Claude lee tu código</h2>
+        <p>Cuando le haces una pregunta sobre tu proyecto, Claude Code <strong>busca automáticamente</strong> los archivos relevantes. No necesitas especificar rutas la mayoría del tiempo.</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">sesión interactiva</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Claude busca y lee los archivos por sí solo</span>
+<span class="str">> "¿Qué hace la clase UserService?"</span>
+
+<span class="comment"># También puedes mencionar archivos específicos</span>
+<span class="str">> "Mira el archivo src/auth/login.ts y explícame el flujo"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Editar archivos</h2>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-dot">✍️</div>
+            <div class="step-content">
+              <h4>Claude propone el cambio</h4>
+              <p>Muestra un diff con las líneas que va a agregar/quitar (verde/rojo).</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">👁️</div>
+            <div class="step-content">
+              <h4>Tú lo revisas</h4>
+              <p>Puedes ver exactamente qué va a cambiar antes de aceptar.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">✅</div>
+            <div class="step-content">
+              <h4>Apruebas o rechazas</h4>
+              <p>Claude espera tu confirmación para operaciones que modifican archivos.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Ejemplos de edición</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">instrucciones</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Agregar validación</span>
+<span class="str">"Agrega validación de email en la función createUser"</span>
+
+<span class="comment"># Renombrar y refactorizar</span>
+<span class="str">"Renombra getUserById a findUserById en todos los archivos"</span>
+
+<span class="comment"># Crear archivo nuevo</span>
+<span class="str">"Crea un archivo utils/formatDate.ts con funciones de formato"</span>
+
+<span class="comment"># Eliminar código muerto</span>
+<span class="str">"Elimina todas las funciones que ya no se usan en helpers.js"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Ver cambios sin aplicarlos</h2>
+        <p>Puedes pedirle a Claude que <strong>sugiera</strong> sin que modifique nada todavía:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">instrucciones</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="str">"¿Cómo refactorizarías esta función? Solo muéstrame, no cambies nada"</span>
+<span class="str">"Explícame qué cambios harías para agregar paginación, sin aplicarlos"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-4">
+          <h3>🧠 ¿Claude puede editar archivos sin pedirte confirmación?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-4', this, false)">
+              <div class="opt-letter">A</div>
+              Sí, siempre edita directamente sin preguntar
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-4', this, true)">
+              <div class="opt-letter">B</div>
+              Por defecto te pide confirmación antes de modificar archivos
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-4', this, false)">
+              <div class="opt-letter">C</div>
+              No puede editar archivos, solo leerlos
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-4-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Ejecutando comandos",
+    subtitle: "Terminal y scripts",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">⚡ Lección 5</div>
+        <h1>Ejecutando comandos</h1>
+        <p class="desc">Claude Code puede correr comandos en tu terminal: tests, builds, instalaciones y más.</p>
+      </div>
+
+      <div class="section">
+        <h2>Ejecutar comandos directamente</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">instrucciones</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Tests</span>
+<span class="str">"Corre los tests y dime cuántos fallan"</span>
+<span class="str">"Corre solo los tests de auth y arregla los que fallen"</span>
+
+<span class="comment"># Build</span>
+<span class="str">"Haz el build del proyecto y muéstrame los errores"</span>
+
+<span class="comment"># Instalar dependencias</span>
+<span class="str">"Instala la librería zod y úsala para validar el schema de usuarios"</span>
+
+<span class="comment"># Cualquier comando</span>
+<span class="str">"Ejecuta npm run lint y arregla todos los errores"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Flujo de trabajo típico</h2>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-dot">1</div>
+            <div class="step-content">
+              <h4>Claude propone el comando</h4>
+              <p>Muestra exactamente qué va a ejecutar: <code>npm test -- --watch=false</code></p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">2</div>
+            <div class="step-content">
+              <h4>Tú apruebas</h4>
+              <p>Ves el comando antes de que se ejecute y puedes rechazarlo.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">3</div>
+            <div class="step-content">
+              <h4>Claude lee el output</h4>
+              <p>Analiza el resultado y actúa en consecuencia (arregla errores, continúa, etc.)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Casos de uso frecuentes</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Instrucción</th><th>Lo que hace Claude</th></tr></thead>
+          <tbody>
+            <tr><td>"Corre los tests"</td><td>Ejecuta la suite completa, lee output, reporta</td></tr>
+            <tr><td>"Arregla los tests rotos"</td><td>Corre, lee errores, edita código, corre de nuevo</td></tr>
+            <tr><td>"Instala X y úsalo"</td><td>npm install, importa, implementa</td></tr>
+            <tr><td>"Haz lint y autofix"</td><td>Corre linter, aplica fixes automáticos</td></tr>
+            <tr><td>"Inicia el servidor y pruébalo"</td><td>npm start, llama endpoints, verifica</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Seguridad en la ejecución</h2>
+        <div class="callout danger">
+          <div class="callout-icon">🔒</div>
+          <div class="callout-body">
+            <strong>Comandos destructivos</strong>
+            <p>Claude siempre te pide confirmación explícita antes de ejecutar comandos que borran datos, hacen push, o tienen alto impacto. Nunca los ejecuta silenciosamente.</p>
+          </div>
+        </div>
+        <div class="callout tip">
+          <div class="callout-icon">✅</div>
+          <div class="callout-body">
+            <strong>Tip de productividad</strong>
+            <p>Puedes agregar permisos de comandos de confianza con <code>/config</code> para no tener que aprobar cada vez comandos como <code>npm test</code>.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-5">
+          <h3>🧠 Si le dices "arregla los tests rotos", ¿qué hace Claude?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-5', this, false)">
+              <div class="opt-letter">A</div>
+              Solo muestra qué tests fallan, no los arregla
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-5', this, false)">
+              <div class="opt-letter">B</div>
+              Elimina los tests que fallan para que pasen
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-5', this, true)">
+              <div class="opt-letter">C</div>
+              Corre los tests, lee los errores, edita el código y vuelve a correr
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-5-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Git y commits",
+    subtitle: "Control de versiones",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">🌿 Lección 6</div>
+        <h1>Git y commits</h1>
+        <p class="desc">Usa Claude Code para gestionar tu historial de git, crear commits y abrir pull requests.</p>
+      </div>
+
+      <div class="section">
+        <h2>Operaciones de git básicas</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">instrucciones</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Crear un commit</span>
+<span class="str">"Haz un commit con los cambios actuales"</span>
+<span class="str">"Commitea solo los archivos de autenticación"</span>
+
+<span class="comment"># Revisar cambios</span>
+<span class="str">"¿Qué archivos he modificado desde el último commit?"</span>
+<span class="str">"Muéstrame el diff de los cambios pendientes"</span>
+
+<span class="comment"># Ramas</span>
+<span class="str">"Crea una rama llamada feature/user-profile y cámbiate a ella"</span>
+<span class="str">"¿En qué rama estoy y cuántos commits llevo?"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Mensajes de commit inteligentes</h2>
+        <p>Claude genera mensajes de commit descriptivos siguiendo las convenciones del proyecto:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">ejemplo de output</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Si tienes commits con prefijos tipo feat/fix/chore...</span>
+<span class="comment"># Claude seguirá el mismo estilo:</span>
+
+feat(auth): add JWT refresh token support
+fix(users): correct email validation regex
+chore(deps): upgrade eslint to v9</pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Pull Requests</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">instrucciones</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Crear PR (requiere GitHub CLI o gh instalado)</span>
+<span class="str">"Crea un PR con todos los cambios de esta rama hacia main"</span>
+<span class="str">"Abre un PR con título 'Agregar sistema de notificaciones'"</span>
+
+<span class="comment"># Revisar PR existente</span>
+<span class="str">"Revisa el PR #42 y dame feedback"</span>
+<span class="str">"¿Qué cambios tiene el PR #23?"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Flujo completo de feature</h2>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-dot">1</div>
+            <div class="step-content">
+              <h4>"Crea rama feature/login"</h4>
+              <p>Claude crea y cambia a la rama nueva.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">2</div>
+            <div class="step-content">
+              <h4>"Implementa el formulario de login con validación"</h4>
+              <p>Claude escribe el código necesario.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">3</div>
+            <div class="step-content">
+              <h4>"Corre los tests y arregla los que fallen"</h4>
+              <p>Claude ejecuta, corrige y verifica.</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">4</div>
+            <div class="step-content">
+              <h4>"Haz commit y abre un PR hacia main"</h4>
+              <p>Claude commitea y crea el PR con descripción.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-6">
+          <h3>🧠 ¿Qué hace Claude antes de hacer un commit?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-6', this, false)">
+              <div class="opt-letter">A</div>
+              Commitea silenciosamente sin avisarte
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-6', this, true)">
+              <div class="opt-letter">B</div>
+              Te muestra los archivos y el mensaje, y pide tu confirmación
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-6', this, false)">
+              <div class="opt-letter">C</div>
+              Solo hace stage pero nunca el commit
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-6-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Slash commands",
+    subtitle: "Comandos especiales",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">🔧 Lección 7</div>
+        <h1>Slash Commands</h1>
+        <p class="desc">Los comandos especiales con <code>/</code> que aceleran tu workflow.</p>
+      </div>
+
+      <div class="section">
+        <h2>¿Qué son los slash commands?</h2>
+        <p>Son comandos que escribes directamente en la sesión de Claude Code precedidos de <code>/</code>. Activan funciones especiales del sistema sin necesidad de lenguaje natural.</p>
+      </div>
+
+      <div class="section">
+        <h2>Comandos esenciales</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
+          <tbody>
+            <tr><td>/help</td><td>Muestra todos los comandos disponibles</td></tr>
+            <tr><td>/clear</td><td>Limpia el contexto de la conversación (sin cerrar)</td></tr>
+            <tr><td>/config</td><td>Abre la configuración interactiva</td></tr>
+            <tr><td>/init</td><td>Crea el archivo CLAUDE.md en tu proyecto</td></tr>
+            <tr><td>/review</td><td>Revisa el PR o código actual</td></tr>
+            <tr><td>/memory</td><td>Ve y edita la memoria persistente de Claude</td></tr>
+            <tr><td>/model</td><td>Cambia el modelo de IA (Sonnet, Opus, Haiku)</td></tr>
+            <tr><td>/cost</td><td>Muestra el costo de tokens de la sesión actual</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Uso en práctica</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">sesión interactiva</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Cuando el contexto se vuelve demasiado largo</span>
+<span class="str">/clear</span>
+
+<span class="comment"># Ver cuánto estás gastando en tokens</span>
+<span class="str">/cost</span>
+
+<span class="comment"># Si necesitas más potencia (Opus es más lento pero mejor)</span>
+<span class="str">/model</span>
+
+<span class="comment"># Inicializar el proyecto con contexto persistente</span>
+<span class="str">/init</span>
+
+<span class="comment"># Ver qué recuerda Claude de tu proyecto</span>
+<span class="str">/memory</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Cuándo usar /clear</h2>
+        <div class="callout tip">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <strong>Señales de que necesitas /clear</strong>
+            <p>Usa <code>/clear</code> cuando Claude empiece a confundirse con contexto anterior, cuando cambies de tarea completamente, o cuando las respuestas se vuelvan más lentas y costosas.</p>
+          </div>
+        </div>
+        <div class="callout warning">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-body">
+            <strong>Ojo</strong>
+            <p><code>/clear</code> borra el historial de la conversación pero <strong>no</strong> deshace los cambios en archivos que ya se hicieron.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-7">
+          <h3>🧠 ¿Qué hace <code>/clear</code>?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-7', this, false)">
+              <div class="opt-letter">A</div>
+              Borra todos los archivos modificados en la sesión
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-7', this, true)">
+              <div class="opt-letter">B</div>
+              Limpia el historial de conversación, pero no toca los archivos
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-7', this, false)">
+              <div class="opt-letter">C</div>
+              Cierra la sesión y sale del programa
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-7-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "CLAUDE.md",
+    subtitle: "Memoria persistente",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">📋 Lección 8</div>
+        <h1>CLAUDE.md — Memoria del proyecto</h1>
+        <p class="desc">El archivo que le da a Claude contexto permanente sobre tu proyecto para no tener que explicarlo cada vez.</p>
+      </div>
+
+      <div class="section">
+        <h2>¿Qué es CLAUDE.md?</h2>
+        <p>Es un archivo Markdown en la raíz de tu proyecto que Claude <strong>lee automáticamente</strong> al inicio de cada sesión. Es como el "manual de onboarding" de tu proyecto para la IA.</p>
+        <div class="callout info">
+          <div class="callout-icon">📌</div>
+          <div class="callout-body">
+            <strong>Se carga siempre</strong>
+            <p>Claude lee CLAUDE.md al inicio de cada sesión, sin que tengas que pedírselo. Es contexto gratuito y persistente.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Crearlo automáticamente</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Claude analiza tu proyecto y genera el CLAUDE.md</span>
+<span class="cmd">claude</span>
+<span class="str">> /init</span></pre>
+        </div>
+        <p>Analizará tu código y generará un CLAUDE.md con la estructura del proyecto, comandos importantes y convenciones detectadas.</p>
+      </div>
+
+      <div class="section">
+        <h2>¿Qué poner en CLAUDE.md?</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">markdown</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># CLAUDE.md</span>
+
+<span class="kw">## Proyecto</span>
+API REST para e-commerce. Backend en Node.js + TypeScript.
+Base de datos: PostgreSQL con Prisma ORM.
+
+<span class="kw">## Comandos importantes</span>
+- npm test          → corre tests con Jest
+- npm run dev       → servidor en puerto 3000
+- npm run migrate   → aplica migraciones de BD
+
+<span class="kw">## Convenciones</span>
+- Commits tipo: feat/fix/chore/docs
+- Archivos en camelCase, clases en PascalCase
+- Tests van en __tests__/ junto al archivo fuente
+
+<span class="kw">## No hacer</span>
+- No usar var, siempre const/let
+- No commits directos a main, usar PRs</pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Jerarquía de archivos</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Archivo</th><th>Alcance</th></tr></thead>
+          <tbody>
+            <tr><td>~/.claude/CLAUDE.md</td><td>Global — se aplica a todos tus proyectos</td></tr>
+            <tr><td>./CLAUDE.md</td><td>Proyecto — se aplica solo a este repo</td></tr>
+            <tr><td>./src/CLAUDE.md</td><td>Directorio — solo al explorar esa carpeta</td></tr>
+          </tbody>
+        </table>
+        <div class="callout tip">
+          <div class="callout-icon">💡</div>
+          <div class="callout-body">
+            <strong>CLAUDE.md global</strong>
+            <p>Usa <code>~/.claude/CLAUDE.md</code> para preferencias personales: tu nombre, estilo de código preferido, herramientas que siempre usas.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-8">
+          <h3>🧠 ¿Cuándo lee Claude el archivo CLAUDE.md?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-8', this, false)">
+              <div class="opt-letter">A</div>
+              Solo cuando se lo pides explícitamente
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-8', this, true)">
+              <div class="opt-letter">B</div>
+              Automáticamente al iniciar cada sesión
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-8', this, false)">
+              <div class="opt-letter">C</div>
+              Una sola vez al crear el archivo con /init
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-8-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Permisos y seguridad",
+    subtitle: "Control de acceso",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">🔐 Lección 9</div>
+        <h1>Permisos y seguridad</h1>
+        <p class="desc">Entiende cómo Claude pide permisos y cómo configurarlos para tu flujo de trabajo.</p>
+      </div>
+
+      <div class="section">
+        <h2>El modelo de permisos</h2>
+        <p>Claude Code clasifica las acciones por su nivel de riesgo:</p>
+        <table class="cmd-table">
+          <thead><tr><th>Tipo de acción</th><th>Comportamiento</th><th>Ejemplo</th></tr></thead>
+          <tbody>
+            <tr><td>Leer archivos</td><td>Automático, sin pedir</td><td>Leer src/app.ts</td></tr>
+            <tr><td>Escribir/editar</td><td>Muestra diff, pide OK</td><td>Modificar un archivo</td></tr>
+            <tr><td>Ejecutar comandos</td><td>Muestra comando, pide OK</td><td>npm test</td></tr>
+            <tr><td>Comandos destructivos</td><td>Advertencia explícita</td><td>rm -rf, git push --force</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Configurar permisos automáticos</h2>
+        <p>Para no tener que aprobar cada vez comandos de confianza:</p>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Abrir configuración interactiva</span>
+<span class="cmd">claude</span>
+<span class="str">> /config</span>
+
+<span class="comment"># O editar directamente el archivo de settings</span>
+<span class="comment"># ~/.claude/settings.json</span></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">json (~/.claude/settings.json)</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre>{
+  <span class="str">"permissions"</span>: {
+    <span class="str">"allow"</span>: [
+      <span class="str">"Bash(npm test:*)"</span>,
+      <span class="str">"Bash(npm run lint:*)"</span>,
+      <span class="str">"Bash(git status:*)"</span>
+    ]
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Modo sin confirmaciones (cuidado)</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">bash</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># Salta TODAS las confirmaciones — solo en entornos controlados</span>
+<span class="cmd">claude</span> <span class="flag">--dangerously-skip-permissions</span></pre>
+        </div>
+        <div class="callout danger">
+          <div class="callout-icon">🚨</div>
+          <div class="callout-body">
+            <strong>Solo para CI/CD o Docker</strong>
+            <p><code>--dangerously-skip-permissions</code> es para pipelines automatizados en entornos aislados. Nunca lo uses en tu máquina personal con código de producción.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Buenas prácticas de seguridad</h2>
+        <ul>
+          <li>Nunca pongas API keys o secretos directamente en instrucciones a Claude</li>
+          <li>Usa variables de entorno para credenciales (<code>.env</code>)</li>
+          <li>Revisa los diffs antes de aprobar cambios en archivos críticos</li>
+          <li>No uses <code>--dangerously-skip-permissions</code> en proyectos de producción</li>
+          <li>El archivo <code>~/.claude/credentials.json</code> nunca va a git</li>
+        </ul>
+      </div>
+
+      <div class="section">
+        <h2>Quiz</h2>
+        <div class="quiz" id="quiz-9">
+          <h3>🧠 ¿Para qué está diseñado <code>--dangerously-skip-permissions</code>?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-9', this, false)">
+              <div class="opt-letter">A</div>
+              Para usuarios avanzados que quieren más velocidad en su laptop
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-9', this, true)">
+              <div class="opt-letter">B</div>
+              Para pipelines de CI/CD en entornos aislados y controlados
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-9', this, false)">
+              <div class="opt-letter">C</div>
+              Para saltarse el login de Anthropic
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-9-fb"></div>
+        </div>
+      </div>
+    `
+  },
+  {
+    title: "Workflow completo",
+    subtitle: "Todo junto",
+    content: () => `
+      <div class="lesson-header">
+        <div class="lesson-badge">🏆 Lección 10</div>
+        <h1>Workflow completo</h1>
+        <p class="desc">Combina todo lo aprendido en un flujo de trabajo real de principio a fin.</p>
+      </div>
+
+      <div class="section">
+        <h2>El workflow estándar con Claude Code</h2>
+        <div class="steps">
+          <div class="step-item">
+            <div class="step-dot">1</div>
+            <div class="step-content">
+              <h4>Inicializa el proyecto</h4>
+              <p>Entra al directorio del proyecto y crea el CLAUDE.md: <code>claude</code> → <code>/init</code></p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">2</div>
+            <div class="step-content">
+              <h4>Entiende el estado actual</h4>
+              <p>"¿Cuáles son los bugs conocidos y las tareas pendientes?"</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">3</div>
+            <div class="step-content">
+              <h4>Trabaja en una feature o bug</h4>
+              <p>"Crea rama feature/X" → "Implementa Y" → "Corre tests" → "Arregla errores"</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">4</div>
+            <div class="step-content">
+              <h4>Revisa antes de commitear</h4>
+              <p>"¿Qué cambios hice? ¿Hay algo que deba revisar antes del commit?"</p>
+            </div>
+          </div>
+          <div class="step-item">
+            <div class="step-dot">5</div>
+            <div class="step-content">
+              <h4>Commitea y abre PR</h4>
+              <p>"Haz commit y abre un PR hacia main con descripción detallada"</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Ejemplo real: agregar feature desde cero</h2>
+        <div class="code-block">
+          <div class="code-header">
+            <span class="code-lang">sesión interactiva completa</span>
+            <button class="copy-btn" onclick="copyCode(this)">Copiar</button>
+          </div>
+          <pre><span class="comment"># 1. Abrir sesión</span>
+<span class="cmd">claude</span>
+
+<span class="comment"># 2. Entender el proyecto</span>
+<span class="str">> "Explícame la estructura del proyecto y cómo están organizadas las rutas de API"</span>
+
+<span class="comment"># 3. Crear la feature</span>
+<span class="str">> "Crea una rama feature/search-users y agrega un endpoint GET /api/users/search que filtre por nombre y email"</span>
+
+<span class="comment"># 4. Tests</span>
+<span class="str">> "Escribe tests unitarios para el endpoint nuevo y córrelos"</span>
+
+<span class="comment"># 5. Si algo falla</span>
+<span class="str">> "El test de búsqueda por email falla, arréglalo"</span>
+
+<span class="comment"># 6. Linting</span>
+<span class="str">> "Corre el linter y corrige los warnings"</span>
+
+<span class="comment"># 7. Commit y PR</span>
+<span class="str">> "Haz commit y crea un PR hacia main"</span></pre>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Tips de productividad</h2>
+        <div class="callout tip">
+          <div class="callout-icon">🚀</div>
+          <div class="callout-body">
+            <strong>Sé específico en las instrucciones</strong>
+            <p>En vez de "arregla el bug", di "el endpoint POST /login devuelve 500 cuando el email tiene mayúsculas, arréglalo". Más contexto = mejor resultado.</p>
+          </div>
+        </div>
+        <div class="callout tip">
+          <div class="callout-icon">🔄</div>
+          <div class="callout-body">
+            <strong>Itera en pequeños pasos</strong>
+            <p>En vez de una instrucción gigante, divide en pasos: crea la función, luego agrega validación, luego los tests. Más fácil de revisar y corregir.</p>
+          </div>
+        </div>
+        <div class="callout tip">
+          <div class="callout-icon">📋</div>
+          <div class="callout-body">
+            <strong>Usa CLAUDE.md para convenciones</strong>
+            <p>Entre mejor documentado esté tu CLAUDE.md, menos tendrás que repetirle tus preferencias y convenciones del proyecto en cada sesión.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Resumen de todo lo aprendido</h2>
+        <table class="cmd-table">
+          <thead><tr><th>Concepto</th><th>Lo esencial</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code</td><td>Agente en terminal que toma acciones reales</td></tr>
+            <tr><td>Instalación</td><td><code>npm install -g @anthropic-ai/claude-code</code></td></tr>
+            <tr><td>Sesión</td><td><code>claude</code> / <code>claude --continue</code></td></tr>
+            <tr><td>Tarea directa</td><td><code>claude -p "instrucción"</code></td></tr>
+            <tr><td>Slash commands</td><td><code>/init</code>, <code>/clear</code>, <code>/config</code>, <code>/review</code></td></tr>
+            <tr><td>CLAUDE.md</td><td>Contexto persistente que se carga automáticamente</td></tr>
+            <tr><td>Permisos</td><td>Siempre te pide OK para acciones de impacto</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Quiz final</h2>
+        <div class="quiz" id="quiz-10">
+          <h3>🏆 ¿Cuál es la mejor práctica al usar Claude Code para una feature nueva?</h3>
+          <div class="quiz-options">
+            <div class="quiz-opt" onclick="checkQuiz('quiz-10', this, false)">
+              <div class="opt-letter">A</div>
+              Dar una sola instrucción larga con todos los detalles
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-10', this, true)">
+              <div class="opt-letter">B</div>
+              Dividir en pasos pequeños, revisar cada cambio e iterar
+            </div>
+            <div class="quiz-opt" onclick="checkQuiz('quiz-10', this, false)">
+              <div class="opt-letter">C</div>
+              Usar --dangerously-skip-permissions para mayor velocidad
+            </div>
+          </div>
+          <div class="quiz-feedback" id="quiz-10-fb"></div>
+        </div>
+      </div>
+    `
+  }
+];
+
+const QUIZ_ANSWERS = {
+  'quiz-1': { correct: 'Claude Code puede tomar acciones reales en tu computadora', explanation: '¡Correcto! La diferencia clave es que Claude Code actúa en tu sistema — lee archivos, escribe código, ejecuta comandos.' },
+  'quiz-2': { correct: 'Ejecuta una tarea directa sin sesión interactiva', explanation: '¡Correcto! El flag -p (--print) ejecuta la instrucción y devuelve el resultado sin abrir una sesión interactiva.' },
+  'quiz-3': { correct: 'claude --continue', explanation: '¡Correcto! --continue retoma la sesión más reciente con todo su contexto intacto.' },
+  'quiz-4': { correct: 'Por defecto te pide confirmación antes de modificar archivos', explanation: '¡Correcto! Claude siempre muestra el diff y pide tu OK antes de hacer cambios. Puedes ver exactamente qué va a cambiar.' },
+  'quiz-5': { correct: 'Corre los tests, lee los errores, edita el código y vuelve a correr', explanation: '¡Correcto! Claude hace un loop completo: ejecuta → analiza output → corrige → vuelve a ejecutar hasta que pasen.' },
+  'quiz-6': { correct: 'Te muestra los archivos y el mensaje, y pide tu confirmación', explanation: '¡Correcto! Git push y commit son operaciones que afectan el historial, así que Claude siempre te pide confirmación explícita.' },
+  'quiz-7': { correct: 'Limpia el historial de conversación, pero no toca los archivos', explanation: '¡Correcto! /clear solo limpia el contexto de la IA. Los archivos que ya se modificaron siguen modificados.' },
+  'quiz-8': { correct: 'Automáticamente al iniciar cada sesión', explanation: '¡Correcto! CLAUDE.md se carga automáticamente en cada sesión. Es contexto gratuito y persistente sin que tengas que pedírselo.' },
+  'quiz-9': { correct: 'Para pipelines de CI/CD en entornos aislados y controlados', explanation: '¡Correcto! --dangerously-skip-permissions está pensado para automatización en Docker/CI donde no hay humano presente para confirmar.' },
+  'quiz-10': { correct: 'Dividir en pasos pequeños, revisar cada cambio e iterar', explanation: '¡Correcto! Iterar en pasos pequeños te permite revisar el trabajo, corregir errores temprano y mantener el control del proceso.' }
+};
+
+let currentLesson = 0;
+let completed = new Set(JSON.parse(localStorage.getItem('cc_completed') || '[]'));
+
+function saveProgress() {
+  localStorage.setItem('cc_completed', JSON.stringify([...completed]));
+}
+
+function renderSidebar() {
+  const list = document.getElementById('lesson-list');
+  list.innerHTML = LESSONS.map((l, i) => `
+    <div class="lesson-item ${i === currentLesson ? 'active' : ''} ${completed.has(i) ? 'done' : ''}" onclick="goTo(${i})">
+      <div class="lesson-num">${completed.has(i) ? '✓' : i + 1}</div>
+      <div class="lesson-title-wrap">
+        <div class="title">${l.title}</div>
+        <div class="subtitle">${l.subtitle}</div>
+      </div>
+    </div>
+  `).join('');
+
+  const total = LESSONS.length;
+  const done = completed.size;
+  const pct = Math.round((done / total) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-text').textContent = `${done} / ${total} lecciones`;
+}
+
+function renderContent() {
+  const lesson = LESSONS[currentLesson];
+  const content = document.getElementById('content');
+  content.innerHTML = lesson.content() + `
+    <button id="complete-btn" class="${completed.has(currentLesson) ? 'done' : ''}" onclick="completeLesson()">
+      ${completed.has(currentLesson) ? '✓ Completada' : '✅ Marcar como completada'}
+    </button>
+  `;
+  content.scrollTop = 0;
+
+  document.getElementById('crumb-num').textContent = currentLesson + 1;
+  document.getElementById('prev-btn').disabled = currentLesson === 0;
+  document.getElementById('next-btn').textContent = currentLesson === LESSONS.length - 1 ? '🏁 Finalizar' : 'Siguiente →';
+}
+
+function navigate(dir) {
+  const next = currentLesson + dir;
+  if (next >= 0 && next < LESSONS.length) {
+    goTo(next);
+  }
+}
+
+function completeLesson() {
+  completed.add(currentLesson);
+  saveProgress();
+  renderSidebar();
+
+  const btn = document.getElementById('complete-btn');
+  btn.textContent = '✓ Completada';
+  btn.classList.add('done');
+
+  const cel = document.getElementById('celebration');
+  const msg = document.getElementById('cel-msg');
+
+  if (completed.size === LESSONS.length) {
+    msg.textContent = '¡Completaste el curso completo de Claude Code! Ahora eres un experto 🎓';
+    document.querySelector('.celebration-card .emoji').textContent = '🏆';
+    document.querySelector('.celebration-card h2').textContent = '¡Curso completado!';
+  } else {
+    msg.textContent = `Llevas ${completed.size} de ${LESSONS.length} lecciones. ¡Sigue así!`;
+  }
+
+  cel.classList.add('show');
+}
+
+function closeCelebration() {
+  document.getElementById('celebration').classList.remove('show');
+  if (currentLesson < LESSONS.length - 1) {
+    navigate(1);
+  }
+}
+
+function checkQuiz(quizId, el, isCorrect) {
+  const quiz = document.getElementById(quizId);
+  if (quiz.classList.contains('answered')) return;
+  quiz.classList.add('answered');
+
+  const opts = quiz.querySelectorAll('.quiz-opt');
+  opts.forEach(o => o.style.pointerEvents = 'none');
+
+  const fb = document.getElementById(quizId + '-fb');
+  const answer = QUIZ_ANSWERS[quizId];
+
+  if (isCorrect) {
+    el.classList.add('correct');
+    fb.textContent = '✅ ' + answer.explanation;
+    fb.className = 'quiz-feedback show correct';
+  } else {
+    el.classList.add('wrong');
+    opts.forEach(o => {
+      if (o.textContent.trim().includes(answer.correct)) o.classList.add('correct');
+    });
+    fb.textContent = '❌ Incorrecto. ' + answer.explanation;
+    fb.className = 'quiz-feedback show wrong';
+  }
+}
+
+function copyCode(btn) {
+  const pre = btn.closest('.code-block').querySelector('pre');
+  const text = pre.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = 'Copiar';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  sb.classList.toggle('open');
+}
+
+function goTo(index) {
+  currentLesson = index;
+  renderSidebar();
+  renderContent();
+  // Close sidebar on mobile after selecting
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+// Init
+renderSidebar();
+renderContent();
+
+// ── PWA install prompt ──
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  if (!localStorage.getItem('cc_banner_dismissed')) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('visible');
+  _installPrompt = null;
+});
+
+function triggerInstall() {
+  if (!_installPrompt) return;
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      document.getElementById('install-banner').classList.remove('visible');
+    }
+    _installPrompt = null;
+  });
+}
+
+function dismissBanner() {
+  document.getElementById('install-banner').classList.remove('visible');
+  localStorage.setItem('cc_banner_dismissed', '1');
+}
+
+// Register service worker for PWA / offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
