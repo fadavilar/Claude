@@ -35,11 +35,23 @@
       font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
       background: var(--bg);
       color: var(--text);
-      display: flex;
       height: 100vh;
       overflow: hidden;
       font-size: 15px;
       line-height: 1.65;
+    }
+
+    #app-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    #inner-row {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
     }
 
     /* ── Sidebar ── */
@@ -581,7 +593,9 @@
 
     /* ── Mobile responsive ── */
     @media (max-width: 700px) {
-      body { flex-direction: column; }
+      #inner-row { flex-direction: column; }
+      #install-banner { padding: 10px 14px; gap: 8px; }
+      #install-banner .ib-text span { display: none; }
 
       #sidebar {
         width: 100%;
@@ -638,9 +652,68 @@
 
       .celebration-card { padding: 28px 24px; margin: 16px; }
     }
+
+    /* ── Install banner ── */
+    #install-banner {
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 20px;
+      background: linear-gradient(135deg, rgba(124,106,247,.18), rgba(86,214,160,.12));
+      border-bottom: 1px solid rgba(124,106,247,.3);
+      flex-shrink: 0;
+      animation: slideDown .3s ease;
+    }
+    #install-banner.visible { display: flex; }
+    @keyframes slideDown { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    #install-banner .ib-left { display: flex; align-items: center; gap: 10px; }
+    #install-banner .ib-icon {
+      width: 36px; height: 36px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0;
+    }
+    #install-banner .ib-text strong { display: block; font-size: 13px; color: var(--text); }
+    #install-banner .ib-text span { font-size: 12px; color: var(--text-muted); }
+    #install-banner .ib-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    #install-btn {
+      padding: 8px 18px; background: var(--accent); border: none;
+      border-radius: 7px; color: white; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: all .15s; white-space: nowrap;
+    }
+    #install-btn:hover { background: #6c5ae8; transform: translateY(-1px); }
+    #dismiss-btn {
+      width: 26px; height: 26px; border-radius: 50%;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-muted); cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; justify-content: center; transition: all .15s;
+    }
+    #dismiss-btn:hover { background: var(--border); color: var(--text); }
   </style>
 </head>
 <body>
+
+<!-- Wrapper column -->
+<div id="app-wrap">
+
+<!-- Install banner -->
+<div id="install-banner">
+  <div class="ib-left">
+    <div class="ib-icon">⚡</div>
+    <div class="ib-text">
+      <strong>Instalar como app</strong>
+      <span>Funciona sin internet · Sin ocupar espacio</span>
+    </div>
+  </div>
+  <div class="ib-actions">
+    <button id="install-btn" onclick="triggerInstall()">📲 Instalar</button>
+    <button id="dismiss-btn" onclick="dismissBanner()" title="Cerrar">✕</button>
+  </div>
+</div>
+
+<!-- Inner row: sidebar + main -->
+<div id="inner-row">
 
 <!-- Sidebar -->
 <div id="sidebar">
@@ -675,6 +748,9 @@
   </div>
   <div id="content"></div>
 </div>
+
+<!-- Close inner-row and app-wrap -->
+</div></div>
 
 <!-- Celebration -->
 <div id="celebration">
@@ -1945,6 +2021,38 @@ function goTo(index) {
 // Init
 renderSidebar();
 renderContent();
+
+// ── PWA install prompt ──
+let _installPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  if (!localStorage.getItem('cc_banner_dismissed')) {
+    document.getElementById('install-banner').classList.add('visible');
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('install-banner').classList.remove('visible');
+  _installPrompt = null;
+});
+
+function triggerInstall() {
+  if (!_installPrompt) return;
+  _installPrompt.prompt();
+  _installPrompt.userChoice.then(r => {
+    if (r.outcome === 'accepted') {
+      document.getElementById('install-banner').classList.remove('visible');
+    }
+    _installPrompt = null;
+  });
+}
+
+function dismissBanner() {
+  document.getElementById('install-banner').classList.remove('visible');
+  localStorage.setItem('cc_banner_dismissed', '1');
+}
 
 // Register service worker for PWA / offline support
 if ('serviceWorker' in navigator) {
