@@ -1,0 +1,1267 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7c6af7" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Claude Code Web — Guía desde Cero</title>
+  <style>
+    :root {
+      --bg: #0f0f14;
+      --surface: #16161e;
+      --surface2: #1e1e2a;
+      --border: #2a2a3a;
+      --accent: #7c6af7;
+      --accent2: #56d6a0;
+      --accent3: #f7a76c;
+      --text: #e2e2f0;
+      --muted: #888899;
+      --danger: #f76c6c;
+      --r: 10px;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #sidebar-head {
+      padding: 20px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; }
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+    .logo-sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    #sidebar-toggle { display: none; font-size: 20px; color: var(--muted); margin-left: auto; }
+
+    #prog-wrap { padding: 10px 18px; border-bottom: 1px solid var(--border); }
+    #prog-row { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 5px; }
+    #prog-bar { height: 3px; background: var(--border); border-radius: 99px; overflow: hidden; }
+    #prog-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 99px; transition: width .4s ease; width: 0%; }
+
+    #lesson-list { flex: 1; overflow-y: auto; padding: 8px; }
+    #lesson-list::-webkit-scrollbar { width: 3px; }
+    #lesson-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .li {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 11px; border-radius: 8px; cursor: pointer;
+      transition: background .15s; margin-bottom: 2px; border: 1px solid transparent;
+    }
+    .li:hover { background: var(--surface2); }
+    .li.active { background: rgba(124,106,247,.12); border-color: rgba(124,106,247,.28); }
+    .li.done .li-num { background: var(--accent2); color: #0f0f14; }
+    .li.active .li-num { background: var(--accent); color: #fff; }
+    .li-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--border); display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; color: var(--muted); flex-shrink: 0;
+    }
+    .li-info { flex: 1; min-width: 0; }
+    .li-info .t { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .li-info .s { font-size: 11px; color: var(--muted); }
+    .li.active .li-info .t { color: var(--accent); }
+
+    /* ── Main ── */
+    #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    #topbar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 28px; border-bottom: 1px solid var(--border);
+      background: var(--surface); flex-shrink: 0;
+    }
+    .crumb { font-size: 12px; color: var(--muted); }
+    .crumb b { color: var(--accent); }
+    #nav-btns { display: flex; gap: 8px; }
+    .nbtn {
+      padding: 7px 15px; border-radius: 7px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text); cursor: pointer;
+      font-size: 13px; font-weight: 500; transition: all .15s;
+    }
+    .nbtn:hover { background: var(--border); }
+    .nbtn.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .nbtn.pri:hover { background: #6c5ae8; }
+    .nbtn:disabled { opacity: .35; cursor: default; }
+
+    #content { flex: 1; overflow-y: auto; padding: 32px 44px; }
+    #content::-webkit-scrollbar { width: 4px; }
+    #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* ── Content elements ── */
+    .lhead { margin-bottom: 28px; }
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 700; color: var(--accent);
+      background: rgba(124,106,247,.1); border: 1px solid rgba(124,106,247,.22);
+      border-radius: 99px; padding: 3px 10px; margin-bottom: 10px;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .lhead h1 {
+      font-size: 26px; font-weight: 800; line-height: 1.3; margin-bottom: 8px;
+      background: linear-gradient(135deg, var(--text), #a78bfa);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .lhead p { font-size: 14px; color: var(--muted); max-width: 580px; }
+
+    .sec { margin-bottom: 28px; }
+    .sec h2 {
+      font-size: 16px; font-weight: 700; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec h2::before { content:''; display:block; width:3px; height:16px; background:var(--accent); border-radius:2px; }
+    .sec p { color: var(--muted); margin-bottom: 10px; }
+    .sec p strong { color: var(--text); }
+    .sec ul, .sec ol { padding-left: 18px; color: var(--muted); margin-bottom: 10px; }
+    .sec li { margin-bottom: 5px; }
+    .sec li strong { color: var(--text); }
+
+    /* link button — the key element */
+    .link-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: all .15s; cursor: pointer;
+      border: 1px solid; margin: 4px 4px 4px 0;
+    }
+    .link-btn.primary {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .link-btn.primary:hover { background: #6c5ae8; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,106,247,.35); }
+    .link-btn.secondary {
+      background: var(--surface2); border-color: var(--border); color: var(--text);
+    }
+    .link-btn.secondary:hover { background: var(--border); }
+    .link-btn.green {
+      background: rgba(86,214,160,.1); border-color: rgba(86,214,160,.3); color: var(--accent2);
+    }
+    .link-btn.green:hover { background: rgba(86,214,160,.18); }
+    .link-btn.orange {
+      background: rgba(247,167,108,.1); border-color: rgba(247,167,108,.3); color: var(--accent3);
+    }
+    .link-btn.orange:hover { background: rgba(247,167,108,.18); }
+
+    /* code block */
+    .cb {
+      background: #12121a; border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden; margin-bottom: 14px;
+    }
+    .cb-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 7px 13px; background: rgba(255,255,255,.03); border-bottom: 1px solid var(--border);
+    }
+    .cb-lang { font-size: 10px; font-weight: 700; color: var(--accent2); text-transform: uppercase; letter-spacing: .5px; }
+    .copy-btn {
+      font-size: 11px; color: var(--muted); background: transparent; border: none;
+      cursor: pointer; padding: 2px 8px; border-radius: 4px; transition: all .15s;
+    }
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+    .copy-btn.ok { color: var(--accent2); }
+    .cb pre {
+      padding: 14px; overflow-x: auto;
+      font-family: 'Cascadia Code','Fira Code','Consolas',monospace;
+      font-size: 13px; line-height: 1.6; color: var(--text);
+    }
+    .cb pre .c { color: #555566; }
+    .cb pre .g { color: var(--accent2); }
+    .cb pre .p { color: var(--accent3); }
+    .cb pre .a { color: var(--accent); }
+    .cb pre .s { color: #f4c2a1; }
+
+    code { background: rgba(124,106,247,.12); color: #c4b5fd; padding: 1px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+
+    /* callout */
+    .note {
+      display: flex; gap: 11px; padding: 13px 15px; border-radius: var(--r);
+      margin-bottom: 14px; border-left: 3px solid;
+    }
+    .note.tip { background: rgba(86,214,160,.06); border-color: var(--accent2); }
+    .note.warn { background: rgba(247,167,108,.06); border-color: var(--accent3); }
+    .note.info { background: rgba(124,106,247,.06); border-color: var(--accent); }
+    .note.danger { background: rgba(247,108,108,.06); border-color: var(--danger); }
+    .note-ico { font-size: 17px; flex-shrink: 0; margin-top: 1px; }
+    .note-body strong { display: block; font-size: 13px; margin-bottom: 3px; }
+    .note-body p { font-size: 13px; color: var(--muted); margin: 0; }
+
+    /* checklist */
+    .checklist { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .chk {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 14px; background: var(--surface2);
+      border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+      transition: all .15s; user-select: none;
+    }
+    .chk:hover { border-color: var(--accent); }
+    .chk.checked { border-color: rgba(86,214,160,.35); background: rgba(86,214,160,.05); }
+    .chk-box {
+      width: 18px; height: 18px; border-radius: 4px;
+      border: 2px solid var(--border); flex-shrink: 0; margin-top: 1px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; transition: all .15s;
+    }
+    .chk.checked .chk-box { background: var(--accent2); border-color: var(--accent2); color: #0f0f14; font-weight: 900; }
+    .chk-text { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .chk.checked .chk-text { color: var(--text); text-decoration: line-through; opacity: .6; }
+
+    /* steps */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 14px; }
+    .step { display: flex; gap: 14px; padding-bottom: 18px; position: relative; }
+    .step:not(:last-child)::after {
+      content: ''; position: absolute; left: 14px; top: 32px;
+      width: 2px; height: calc(100% - 18px); background: var(--border);
+    }
+    .step-dot {
+      width: 30px; height: 30px; border-radius: 50%;
+      background: var(--surface2); border: 2px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: var(--muted); flex-shrink: 0; z-index: 1;
+    }
+    .step-body { flex: 1; padding-top: 4px; }
+    .step-body h4 { font-size: 13.5px; font-weight: 600; margin-bottom: 3px; }
+    .step-body p { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+
+    /* table */
+    .tbl { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+    .tbl th {
+      text-align: left; padding: 8px 13px; background: var(--surface2);
+      color: var(--muted); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border);
+    }
+    .tbl td { padding: 8px 13px; border-bottom: 1px solid rgba(255,255,255,.04); color: var(--muted); }
+    .tbl td:first-child { color: var(--accent2); font-family: monospace; }
+    .tbl tr:last-child td { border-bottom: none; }
+
+    /* quiz */
+    .quiz { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); padding: 18px; margin-bottom: 14px; }
+    .quiz h3 { font-size: 13.5px; font-weight: 700; margin-bottom: 12px; }
+    .qopts { display: flex; flex-direction: column; gap: 7px; }
+    .qopt {
+      padding: 9px 13px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 7px; cursor: pointer; font-size: 13px; color: var(--muted);
+      transition: all .15s; display: flex; align-items: center; gap: 9px;
+    }
+    .qopt:hover { border-color: var(--accent); color: var(--text); }
+    .qopt.ok { border-color: var(--accent2); background: rgba(86,214,160,.07); color: var(--accent2); }
+    .qopt.no { border-color: var(--danger); background: rgba(247,108,108,.07); color: #ff9898; }
+    .ql {
+      width: 20px; height: 20px; border-radius: 50%; background: var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .qopt.ok .ql { background: var(--accent2); color: #0f0f14; }
+    .qopt.no .ql { background: var(--danger); color: #fff; }
+    .qfb { margin-top: 10px; padding: 9px 13px; border-radius: 7px; font-size: 13px; display: none; }
+    .qfb.show { display: block; }
+    .qfb.ok { background: rgba(86,214,160,.07); color: var(--accent2); border: 1px solid rgba(86,214,160,.18); }
+    .qfb.no { background: rgba(247,108,108,.07); color: #ff9898; border: 1px solid rgba(247,108,108,.18); }
+
+    /* complete */
+    #done-btn {
+      margin-top: 28px; padding: 12px 24px;
+      background: linear-gradient(135deg, var(--accent), #a78bfa);
+      border: none; border-radius: var(--r); color: #fff;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      transition: all .2s; width: 100%;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    #done-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(124,106,247,.35); }
+    #done-btn.done { background: linear-gradient(135deg, var(--accent2), #34d399); }
+
+    /* celebration */
+    #cel { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,.75); z-index: 100; backdrop-filter: blur(4px); }
+    #cel.show { display: flex; }
+    .cel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 36px 44px; text-align: center; max-width: 400px; }
+    .cel-card .em { font-size: 52px; margin-bottom: 14px; }
+    .cel-card h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .cel-card p { color: var(--muted); margin-bottom: 22px; font-size: 14px; }
+    .cel-card button { padding: 10px 26px; background: var(--accent); border: none; border-radius: 8px; color: #fff; font-size: 14px; font-weight: 600; cursor: pointer; }
+
+    /* mobile */
+    @media (max-width: 680px) {
+      body { flex-direction: column; }
+      #sidebar { width: 100%; min-width: unset; max-height: 50px; overflow: hidden; transition: max-height .3s ease; border-right: none; border-bottom: 1px solid var(--border); }
+      #sidebar.open { max-height: 100vh; overflow-y: auto; }
+      #sidebar-head { display: flex; align-items: center; padding: 10px 14px; }
+      #sidebar-toggle { display: block; }
+      .logo-sub { display: none; }
+      #content { padding: 18px 16px 36px; }
+      #topbar { padding: 10px 14px; }
+      .nbtn { padding: 6px 11px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-head" onclick="toggleSb()">
+    <div>
+      <div class="logo"><div class="logo-icon">🌐</div> Claude Code Web</div>
+      <div class="logo-sub">claude.ai/code — sin instalación</div>
+    </div>
+    <span id="sidebar-toggle">☰</span>
+  </div>
+  <div id="prog-wrap">
+    <div id="prog-row"><span>Progreso</span><span id="prog-txt">0 / 10</span></div>
+    <div id="prog-bar"><div id="prog-fill"></div></div>
+  </div>
+  <div id="lesson-list"></div>
+</div>
+
+<div id="main">
+  <div id="topbar">
+    <div class="crumb">Lección <b id="crumb-n">1</b> de 10</div>
+    <div id="nav-btns">
+      <button class="nbtn" id="prev-btn" onclick="nav(-1)">← Anterior</button>
+      <button class="nbtn pri" id="next-btn" onclick="nav(1)">Siguiente →</button>
+    </div>
+  </div>
+  <div id="content"></div>
+</div>
+
+<div id="cel">
+  <div class="cel-card">
+    <div class="em" id="cel-em">🎉</div>
+    <h2 id="cel-h">¡Lección completada!</h2>
+    <p id="cel-p">Sigue así, vas muy bien.</p>
+    <button onclick="closeCel()">Continuar →</button>
+  </div>
+</div>
+
+<script>
+const LESSONS = [
+
+// ── 1 ──────────────────────────────────────────
+{ title: 'Abrir Claude Code Web', sub: 'El primer paso',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🚀 Lección 1</div>
+  <h1>Abrir Claude Code Web</h1>
+  <p>Accede a la app oficial de Claude Code en el navegador — sin instalar nada.</p>
+</div>
+
+<div class="sec">
+  <h2>Abre la app ahora</h2>
+  <p>Haz clic en el botón de abajo. Se abrirá en una nueva pestaña.</p>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Abrir claude.ai/code</a>
+  <div class="note info">
+    <div class="note-ico">ℹ️</div>
+    <div class="note-body">
+      <strong>¿Primera vez?</strong>
+      <p>Si no tienes cuenta, haz clic en "Sign up" para crear una. Es gratis para empezar.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>¿Qué ves al entrar?</h2>
+  <p>La interfaz tiene tres zonas principales:</p>
+  <table class="tbl">
+    <thead><tr><th>Zona</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td>Panel izquierdo</td><td>Explorador de archivos de tu repositorio</td></tr>
+      <tr><td>Centro</td><td>El chat donde escribes instrucciones a Claude</td></tr>
+      <tr><td>Panel derecho</td><td>Vista de archivos editados y diff de cambios</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Abrí claude.ai/code en el navegador</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Inicié sesión con mi cuenta de Anthropic</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Veo la interfaz con el chat en el centro</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>¿No tienes cuenta? Créala aquí</h2>
+  <a class="link-btn green" href="https://claude.ai/login" target="_blank">👤 Crear cuenta en Anthropic</a>
+  <a class="link-btn secondary" href="https://console.anthropic.com" target="_blank">🔑 Consola de Anthropic</a>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q1">
+    <h3>🧠 ¿Necesitas instalar algo para usar claude.ai/code?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q1',this,false)"><div class="ql">A</div>Sí, necesitas instalar Node.js y npm</div>
+      <div class="qopt" onclick="chkQ('q1',this,true)"><div class="ql">B</div>No, funciona directo en el navegador</div>
+      <div class="qopt" onclick="chkQ('q1',this,false)"><div class="ql">C</div>Sí, necesitas instalar una extensión de Chrome</div>
+    </div>
+    <div class="qfb" id="q1-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 2 ──────────────────────────────────────────
+{ title: 'Conectar GitHub', sub: 'Tu repositorio',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🔗 Lección 2</div>
+  <h1>Conectar tu repositorio de GitHub</h1>
+  <p>Claude Code Web trabaja directamente con tus repos de GitHub — sin clonar ni descargar nada.</p>
+</div>
+
+<div class="sec">
+  <h2>Paso 1 — Autoriza GitHub</h2>
+  <p>En claude.ai/code busca el botón <strong>"Connect GitHub"</strong> o <strong>"Add repository"</strong> en el panel izquierdo.</p>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Ir a Claude Code Web</a>
+  <div class="note tip">
+    <div class="note-ico">💡</div>
+    <div class="note-body">
+      <strong>Primera conexión</strong>
+      <p>GitHub te pedirá autorizar a Claude. Solo necesitas hacerlo una vez. Puedes elegir acceso a todos los repos o solo a los que selecciones.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Paso 2 — Elige tu repositorio</h2>
+  <p>Después de autorizar, verás una lista de tus repos. Selecciona el que quieras explorar.</p>
+  <div class="note info">
+    <div class="note-ico">📁</div>
+    <div class="note-body">
+      <strong>¿No tienes un repo todavía?</strong>
+      <p>Puedes crear uno nuevo en GitHub, o usar cualquier repo público como práctica.</p>
+    </div>
+  </div>
+  <a class="link-btn green" href="https://github.com/new" target="_blank">➕ Crear repo nuevo en GitHub</a>
+  <a class="link-btn secondary" href="https://github.com" target="_blank">📂 Ir a mis repositorios</a>
+</div>
+
+<div class="sec">
+  <h2>Paso 3 — Explora la estructura</h2>
+  <p>Una vez conectado, verás los archivos del repo en el panel izquierdo. Claude puede leer todos esos archivos automáticamente.</p>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Autoricé a Claude a acceder a GitHub</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Seleccioné un repositorio</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Veo los archivos del repo en el panel izquierdo</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q2">
+    <h3>🧠 ¿Necesitas clonar el repositorio en tu máquina para usarlo con Claude Code Web?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q2',this,false)"><div class="ql">A</div>Sí, debes hacer git clone primero</div>
+      <div class="qopt" onclick="chkQ('q2',this,true)"><div class="ql">B</div>No, Claude accede directo al repo en GitHub</div>
+      <div class="qopt" onclick="chkQ('q2',this,false)"><div class="ql">C</div>Solo si el repo es privado</div>
+    </div>
+    <div class="qfb" id="q2-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 3 ──────────────────────────────────────────
+{ title: 'Primera instrucción', sub: 'Cómo hablarle a Claude',
+  html: () => `
+<div class="lhead">
+  <div class="badge">💬 Lección 3</div>
+  <h1>Tu primera instrucción</h1>
+  <p>Aprende a escribir instrucciones efectivas en el chat de Claude Code Web.</p>
+</div>
+
+<div class="sec">
+  <h2>El campo de texto</h2>
+  <p>En la parte inferior del chat hay un área de texto. Ahí escribes tus instrucciones en <strong>lenguaje natural</strong> — como si le escribieras a un compañero de trabajo muy capaz.</p>
+  <div class="note tip">
+    <div class="note-ico">💡</div>
+    <div class="note-body">
+      <strong>Puedes escribir en español</strong>
+      <p>Claude entiende instrucciones en español perfectamente. No necesitas escribir en inglés.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Empieza con esto</h2>
+  <p>Copia estas instrucciones y pégalas en el chat una por una para practicar:</p>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">instrucción 1</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>Explícame qué hace este repositorio y cuál es su estructura principal</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">instrucción 2</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>¿Cuáles son los archivos más importantes del proyecto?</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">instrucción 3</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>¿Qué tecnologías y dependencias usa este proyecto?</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Abrir el chat ahora</a>
+</div>
+
+<div class="sec">
+  <h2>Cómo escribir buenas instrucciones</h2>
+  <table class="tbl">
+    <thead><tr><th>❌ Vago</th><th>✅ Específico</th></tr></thead>
+    <tbody>
+      <tr><td>"arregla el bug"</td><td>"El botón de login no hace nada al hacer clic, arréglalo"</td></tr>
+      <tr><td>"agrega algo"</td><td>"Agrega validación de email en el formulario de registro"</td></tr>
+      <tr><td>"explica esto"</td><td>"Explica qué hace la función processPayment línea a línea"</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Escribí mi primera instrucción en el chat</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Claude respondió analizando mi repositorio</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Entiendo la diferencia entre instrucciones vagas y específicas</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q3">
+    <h3>🧠 ¿En qué idioma debes escribirle instrucciones a Claude?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q3',this,false)"><div class="ql">A</div>Solo en inglés para mejores resultados</div>
+      <div class="qopt" onclick="chkQ('q3',this,true)"><div class="ql">B</div>En el idioma que prefieras, entiende español perfectamente</div>
+      <div class="qopt" onclick="chkQ('q3',this,false)"><div class="ql">C</div>En el mismo idioma del código del proyecto</div>
+    </div>
+    <div class="qfb" id="q3-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 4 ──────────────────────────────────────────
+{ title: 'Explorar código', sub: 'Entender proyectos',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🔍 Lección 4</div>
+  <h1>Explorar y entender código</h1>
+  <p>Usa Claude para navegar y comprender proyectos que no conoces.</p>
+</div>
+
+<div class="sec">
+  <h2>Claude como guía del código</h2>
+  <p>Una de las cosas más poderosas de Claude Code es que puede <strong>leer todo el repositorio</strong> y responder preguntas sobre él como si fuera el autor del código.</p>
+</div>
+
+<div class="sec">
+  <h2>Instrucciones para explorar</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">entender la arquitectura</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre><span class="c"># Pégalo en el chat de claude.ai/code</span>
+¿Cómo está organizado este proyecto? Explica la arquitectura
+y el flujo de datos principal.</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">encontrar algo específico</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>¿Dónde se maneja la autenticación de usuarios en este código?
+Muéstrame el archivo y la función exacta.</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">entender una función</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>Explícame paso a paso qué hace [nombre de función o archivo].
+¿Qué entrada recibe y qué devuelve?</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">encontrar bugs potenciales</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>Revisa el código y dime si encuentras bugs potenciales
+o malas prácticas de seguridad.</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Practicar en el chat</a>
+</div>
+
+<div class="sec">
+  <h2>Tip: menciona archivos por nombre</h2>
+  <div class="note tip">
+    <div class="note-ico">💡</div>
+    <div class="note-body">
+      <strong>Sé más preciso</strong>
+      <p>Si sabes el nombre del archivo, menciónalo: <em>"Mira el archivo <code>src/auth/login.ts</code> y explícame el flujo de autenticación"</em>. Claude lo abrirá directamente.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Le pregunté a Claude sobre la arquitectura del proyecto</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Claude me mostró un archivo específico al preguntarle</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Entiendo cómo hacerle preguntas sobre código específico</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q4">
+    <h3>🧠 ¿Cuántos archivos puede leer Claude al responder una pregunta?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q4',this,false)"><div class="ql">A</div>Solo el archivo que le indiques explícitamente</div>
+      <div class="qopt" onclick="chkQ('q4',this,true)"><div class="ql">B</div>Puede leer todos los archivos del repositorio que sean relevantes</div>
+      <div class="qopt" onclick="chkQ('q4',this,false)"><div class="ql">C</div>Máximo 3 archivos por pregunta</div>
+    </div>
+    <div class="qfb" id="q4-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 5 ──────────────────────────────────────────
+{ title: 'Editar archivos', sub: 'Hacer cambios',
+  html: () => `
+<div class="lhead">
+  <div class="badge">✏️ Lección 5</div>
+  <h1>Editar archivos</h1>
+  <p>Cómo Claude propone y aplica cambios en tu código desde la web.</p>
+</div>
+
+<div class="sec">
+  <h2>El flujo de edición</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-dot">1</div>
+      <div class="step-body">
+        <h4>Tú describes el cambio</h4>
+        <p>En lenguaje natural: "Agrega validación de email en el formulario de registro"</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">2</div>
+      <div class="step-body">
+        <h4>Claude muestra el diff</h4>
+        <p>Ves exactamente qué líneas va a agregar (verde) o eliminar (rojo) antes de aplicar.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">3</div>
+      <div class="step-body">
+        <h4>Tú apruebas o rechazas</h4>
+        <p>Haz clic en "Accept" para aplicar el cambio, o "Reject" para descartarlo.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">4</div>
+      <div class="step-body">
+        <h4>El cambio se aplica al repo</h4>
+        <p>El archivo se actualiza directamente en tu repositorio de GitHub.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Instrucciones para practicar ediciones</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">agregar funcionalidad</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>Agrega un comentario explicativo encima de cada función
+principal en [nombre del archivo]</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">corregir código</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>En el archivo [nombre], la función [nombre] tiene un bug:
+[describe el problema]. Corrígelo.</pre>
+  </div>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">solo sugerencia, sin cambiar</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>¿Cómo mejorarías esta función? Solo sugiere, no cambies nada todavía.</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Probar en el chat</a>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Le pedí a Claude que hiciera un cambio en un archivo</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Vi el diff con los cambios propuestos</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Acepté o rechacé el cambio</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q5">
+    <h3>🧠 ¿Qué pasa si rechazas el diff que propone Claude?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q5',this,false)"><div class="ql">A</div>El cambio se aplica de todas formas</div>
+      <div class="qopt" onclick="chkQ('q5',this,true)"><div class="ql">B</div>El cambio se descarta y el archivo queda igual</div>
+      <div class="qopt" onclick="chkQ('q5',this,false)"><div class="ql">C</div>Claude cierra la sesión automáticamente</div>
+    </div>
+    <div class="qfb" id="q5-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 6 ──────────────────────────────────────────
+{ title: 'Git desde la web', sub: 'Commits y ramas',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🌿 Lección 6</div>
+  <h1>Git desde la web</h1>
+  <p>Haz commits, crea ramas y gestiona tu historial de git sin salir de Claude Code Web.</p>
+</div>
+
+<div class="sec">
+  <h2>Hacer un commit</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">instrucción de commit</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>Haz un commit con los cambios actuales. Usa un mensaje
+descriptivo que explique qué se modificó y por qué.</pre>
+  </div>
+  <div class="note tip">
+    <div class="note-ico">💡</div>
+    <div class="note-body">
+      <strong>Mensajes automáticos</strong>
+      <p>Claude genera el mensaje de commit siguiendo las convenciones que detecta en tu historial (feat:, fix:, chore:, etc.).</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Crear y cambiar de rama</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">gestión de ramas</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre><span class="c"># Crear rama nueva</span>
+Crea una rama llamada feature/mi-nueva-funcionalidad
+
+<span class="c"># Ver en qué rama estás</span>
+¿En qué rama estoy actualmente?
+
+<span class="c"># Ver ramas existentes</span>
+¿Qué ramas tiene este repositorio?</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Probar en el chat</a>
+  <a class="link-btn secondary" href="https://github.com" target="_blank">🔍 Ver ramas en GitHub</a>
+</div>
+
+<div class="sec">
+  <h2>Flujo completo de una feature</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-dot">1</div>
+      <div class="step-body">
+        <h4>"Crea una rama feature/login-page"</h4>
+        <p>Claude crea la rama y se posiciona en ella.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">2</div>
+      <div class="step-body">
+        <h4>"Implementa el formulario de login con validación"</h4>
+        <p>Claude escribe el código, tú revisas y aceptas el diff.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">3</div>
+      <div class="step-body">
+        <h4>"Haz un commit con estos cambios"</h4>
+        <p>Claude genera un mensaje descriptivo y commitea.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">4</div>
+      <div class="step-body">
+        <h4>"Abre un Pull Request hacia main"</h4>
+        <p>Claude crea el PR con título y descripción en GitHub.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Le pedí a Claude que hiciera un commit</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Entiendo el flujo: rama → cambios → commit → PR</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Verifiqué el commit en GitHub</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q6">
+    <h3>🧠 ¿Claude puede crear un Pull Request directamente desde el chat?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q6',this,true)"><div class="ql">A</div>Sí, puede crear el PR con título y descripción automáticamente</div>
+      <div class="qopt" onclick="chkQ('q6',this,false)"><div class="ql">B</div>No, debes ir a GitHub manualmente para crear el PR</div>
+      <div class="qopt" onclick="chkQ('q6',this,false)"><div class="ql">C</div>Solo puede hacer commits, los PRs no están disponibles</div>
+    </div>
+    <div class="qfb" id="q6-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 7 ──────────────────────────────────────────
+{ title: 'Slash commands', sub: 'Comandos especiales',
+  html: () => `
+<div class="lhead">
+  <div class="badge">⚡ Lección 7</div>
+  <h1>Slash Commands</h1>
+  <p>Comandos rápidos que escribes con <code>/</code> directamente en el chat.</p>
+</div>
+
+<div class="sec">
+  <h2>¿Cómo se usan?</h2>
+  <p>Escribe <code>/</code> en el chat y aparecerá un menú con todos los comandos disponibles. También puedes escribirlos directamente.</p>
+  <div class="note info">
+    <div class="note-ico">💡</div>
+    <div class="note-body">
+      <strong>Atajos poderosos</strong>
+      <p>Los slash commands activan funciones del sistema que serían más lentas de escribir en lenguaje natural.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Los más útiles en la web</h2>
+  <table class="tbl">
+    <thead><tr><th>Comando</th><th>Qué hace</th></tr></thead>
+    <tbody>
+      <tr><td>/clear</td><td>Limpia la conversación (sin cerrar la sesión)</td></tr>
+      <tr><td>/init</td><td>Analiza el proyecto y crea el archivo CLAUDE.md</td></tr>
+      <tr><td>/review</td><td>Revisa el código o PR actual y da feedback</td></tr>
+      <tr><td>/help</td><td>Lista todos los comandos disponibles</td></tr>
+      <tr><td>/memory</td><td>Ve y edita la memoria persistente del proyecto</td></tr>
+      <tr><td>/model</td><td>Cambia el modelo (Sonnet, Opus, Haiku)</td></tr>
+      <tr><td>/cost</td><td>Muestra el costo de tokens de la sesión</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Prueba estos ahora</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">en el chat de claude.ai/code</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre><span class="c"># Primero escribe / para ver el menú</span>
+/help
+
+<span class="c"># Inicializar contexto del proyecto</span>
+/init
+
+<span class="c"># Ver cuántos tokens llevas gastados</span>
+/cost</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Probar /help en el chat</a>
+</div>
+
+<div class="sec">
+  <h2>Cuándo usar /clear</h2>
+  <div class="note warn">
+    <div class="note-ico">⚠️</div>
+    <div class="note-body">
+      <strong>No borra archivos</strong>
+      <p><code>/clear</code> solo limpia el historial del chat. Los cambios que ya hiciste en archivos no se revierten. Úsalo cuando cambies de tema o la conversación se vuelva muy larga.</p>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Escribí / en el chat y vi el menú de comandos</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Probé /help para ver la lista completa</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Entiendo para qué sirve /clear</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q7">
+    <h3>🧠 ¿Qué pasa si usas /clear en medio de un trabajo?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q7',this,false)"><div class="ql">A</div>Se deshacen todos los cambios hechos en archivos</div>
+      <div class="qopt" onclick="chkQ('q7',this,true)"><div class="ql">B</div>Se borra el historial del chat pero los archivos quedan igual</div>
+      <div class="qopt" onclick="chkQ('q7',this,false)"><div class="ql">C</div>Se cierra la sesión completamente</div>
+    </div>
+    <div class="qfb" id="q7-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 8 ──────────────────────────────────────────
+{ title: 'CLAUDE.md', sub: 'Memoria del proyecto',
+  html: () => `
+<div class="lhead">
+  <div class="badge">📋 Lección 8</div>
+  <h1>CLAUDE.md — Darle memoria al proyecto</h1>
+  <p>El archivo que hace que Claude recuerde el contexto de tu proyecto en cada sesión.</p>
+</div>
+
+<div class="sec">
+  <h2>¿Qué es CLAUDE.md?</h2>
+  <p>Es un archivo Markdown en la raíz de tu repositorio que Claude <strong>lee automáticamente</strong> al inicio de cada sesión. Funciona como el manual de onboarding del proyecto.</p>
+</div>
+
+<div class="sec">
+  <h2>Crearlo automáticamente con /init</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">en el chat</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>/init</pre>
+  </div>
+  <p>Claude analiza el proyecto completo y genera el CLAUDE.md con estructura, comandos y convenciones detectadas.</p>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Ejecutar /init ahora</a>
+</div>
+
+<div class="sec">
+  <h2>Qué poner en CLAUDE.md</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">CLAUDE.md de ejemplo</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre><span class="g">## Proyecto</span>
+API REST para e-commerce. Node.js + TypeScript + PostgreSQL.
+
+<span class="g">## Comandos</span>
+- npm test          → tests con Jest
+- npm run dev       → servidor en puerto 3000
+- npm run build     → compilar TypeScript
+
+<span class="g">## Convenciones</span>
+- Commits: feat/fix/chore/docs
+- Archivos en camelCase
+- Tests en __tests__/ junto al fuente
+
+<span class="g">## Reglas</span>
+- No usar var, solo const/let
+- No commits directos a main</pre>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Jerarquía de archivos</h2>
+  <table class="tbl">
+    <thead><tr><th>Ubicación</th><th>Alcance</th></tr></thead>
+    <tbody>
+      <tr><td>~/.claude/CLAUDE.md</td><td>Global — aplica a todos tus proyectos</td></tr>
+      <tr><td>./CLAUDE.md</td><td>Proyecto — solo a este repositorio</td></tr>
+      <tr><td>./src/CLAUDE.md</td><td>Carpeta — solo cuando explores esa ruta</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Ejecuté /init en mi proyecto</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Revisé el CLAUDE.md generado y lo edité si necesitaba</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Entiendo que Claude lee CLAUDE.md automáticamente</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q8">
+    <h3>🧠 ¿Cuándo lee Claude el archivo CLAUDE.md?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q8',this,false)"><div class="ql">A</div>Solo cuando le dices "lee el CLAUDE.md"</div>
+      <div class="qopt" onclick="chkQ('q8',this,true)"><div class="ql">B</div>Automáticamente al inicio de cada sesión</div>
+      <div class="qopt" onclick="chkQ('q8',this,false)"><div class="ql">C</div>Una sola vez al ejecutar /init</div>
+    </div>
+    <div class="qfb" id="q8-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 9 ──────────────────────────────────────────
+{ title: 'Revisar Pull Requests', sub: 'Code review con IA',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🔎 Lección 9</div>
+  <h1>Revisar Pull Requests con Claude</h1>
+  <p>Usa Claude para hacer code reviews, encontrar bugs y mejorar la calidad del código en PRs.</p>
+</div>
+
+<div class="sec">
+  <h2>Revisar un PR existente</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">instrucciones de review</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre><span class="c"># Review general</span>
+Revisa el PR actual y dame feedback sobre:
+bugs potenciales, calidad del código y mejoras posibles.
+
+<span class="c"># Review de seguridad</span>
+Analiza este PR buscando vulnerabilidades de seguridad.
+
+<span class="c"># Review específico</span>
+¿Hay algún problema de rendimiento en los cambios del PR?</pre>
+  </div>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Revisar PR en el chat</a>
+  <a class="link-btn secondary" href="https://github.com/pulls" target="_blank">📋 Ver mis Pull Requests</a>
+</div>
+
+<div class="sec">
+  <h2>Qué puede hacer Claude en un review</h2>
+  <table class="tbl">
+    <thead><tr><th>Capacidad</th><th>Ejemplo</th></tr></thead>
+    <tbody>
+      <tr><td>Detectar bugs</td><td>Variables no inicializadas, condiciones incorrectas</td></tr>
+      <tr><td>Seguridad</td><td>SQL injection, XSS, credenciales expuestas</td></tr>
+      <tr><td>Rendimiento</td><td>Bucles ineficientes, queries N+1</td></tr>
+      <tr><td>Estilo</td><td>Convenciones de nomenclatura, duplicación de código</td></tr>
+      <tr><td>Tests</td><td>Casos no cubiertos, assertions incorrectas</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Slash command rápido</h2>
+  <div class="cb">
+    <div class="cb-head"><span class="cb-lang">en el chat</span><button class="copy-btn" onclick="cpCode(this)">Copiar</button></div>
+    <pre>/review</pre>
+  </div>
+  <p>Inicia un review completo del código o PR actual con un solo comando.</p>
+</div>
+
+<div class="sec">
+  <h2>Lista de verificación</h2>
+  <div class="checklist">
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Pedí a Claude que revisara un PR o fragmento de código</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Claude encontró al menos una mejora o problema</div></div>
+    <div class="chk" onclick="toggleChk(this)"><div class="chk-box"></div><div class="chk-text">Apliqué alguna de las sugerencias</div></div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Quiz</h2>
+  <div class="quiz" id="q9">
+    <h3>🧠 ¿Qué comando activa un code review completo rápidamente?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q9',this,false)"><div class="ql">A</div>/audit</div>
+      <div class="qopt" onclick="chkQ('q9',this,true)"><div class="ql">B</div>/review</div>
+      <div class="qopt" onclick="chkQ('q9',this,false)"><div class="ql">C</div>/check</div>
+    </div>
+    <div class="qfb" id="q9-fb"></div>
+  </div>
+</div>`
+},
+
+// ── 10 ─────────────────────────────────────────
+{ title: 'Workflow completo', sub: 'Todo junto',
+  html: () => `
+<div class="lhead">
+  <div class="badge">🏆 Lección 10</div>
+  <h1>Workflow completo desde la web</h1>
+  <p>Combina todo lo aprendido en un flujo de trabajo real usando solo claude.ai/code.</p>
+</div>
+
+<div class="sec">
+  <h2>El flujo estándar</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="step-dot">1</div>
+      <div class="step-body">
+        <h4>Abrir y conectar</h4>
+        <p>Entra a claude.ai/code y conecta tu repo de GitHub.</p>
+        <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Abrir Claude Code Web</a>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">2</div>
+      <div class="step-body">
+        <h4>Inicializar con /init</h4>
+        <p>Escribe <code>/init</code> para que Claude entienda el proyecto y cree el CLAUDE.md.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">3</div>
+      <div class="step-body">
+        <h4>Explorar el estado actual</h4>
+        <p>"¿Qué tareas pendientes hay? ¿Qué parte del código necesita más atención?"</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">4</div>
+      <div class="step-body">
+        <h4>Crear rama y trabajar</h4>
+        <p>"Crea rama feature/X" → implementa → revisa el diff → acepta los cambios.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-dot">5</div>
+      <div class="step-body">
+        <h4>Commit y Pull Request</h4>
+        <p>"Haz commit y abre un PR hacia main con descripción detallada."</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="sec">
+  <h2>Links que usarás siempre</h2>
+  <a class="link-btn primary" href="https://claude.ai/code" target="_blank">⚡ Claude Code Web</a>
+  <a class="link-btn green" href="https://github.com" target="_blank">🐙 GitHub</a>
+  <a class="link-btn orange" href="https://console.anthropic.com" target="_blank">🔑 Consola Anthropic</a>
+  <a class="link-btn secondary" href="https://github.com/pulls" target="_blank">📋 Mis Pull Requests</a>
+  <a class="link-btn secondary" href="https://github.com/new" target="_blank">➕ Nuevo repositorio</a>
+  <a class="link-btn secondary" href="https://docs.anthropic.com/en/docs/claude-code/overview" target="_blank">📚 Documentación oficial</a>
+</div>
+
+<div class="sec">
+  <h2>Resumen de todo lo aprendido</h2>
+  <table class="tbl">
+    <thead><tr><th>Concepto</th><th>Lo esencial</th></tr></thead>
+    <tbody>
+      <tr><td>Acceso</td><td>claude.ai/code — solo necesitas el navegador</td></tr>
+      <tr><td>Repositorio</td><td>Conectas GitHub una vez, acceso directo al repo</td></tr>
+      <tr><td>Instrucciones</td><td>Lenguaje natural, sé específico</td></tr>
+      <tr><td>Ediciones</td><td>Claude propone diff → tú aceptas o rechazas</td></tr>
+      <tr><td>Git</td><td>Commits, ramas y PRs desde el chat</td></tr>
+      <tr><td>/init</td><td>Crea CLAUDE.md con contexto del proyecto</td></tr>
+      <tr><td>/review</td><td>Code review automático</td></tr>
+      <tr><td>/clear</td><td>Limpia el chat sin tocar archivos</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="sec">
+  <h2>Quiz final</h2>
+  <div class="quiz" id="q10">
+    <h3>🏆 Tienes un bug reportado. ¿Cuál es el flujo correcto con Claude Code Web?</h3>
+    <div class="qopts">
+      <div class="qopt" onclick="chkQ('q10',this,false)"><div class="ql">A</div>Copiar el código, pegarlo en Claude.ai y pedirle que lo arregle</div>
+      <div class="qopt" onclick="chkQ('q10',this,true)"><div class="ql">B</div>Abrir claude.ai/code, conectar el repo, describir el bug y que Claude lo encuentre y arregle directamente</div>
+      <div class="qopt" onclick="chkQ('q10',this,false)"><div class="ql">C</div>Descargar el repo, arreglar el bug localmente y luego subir el cambio</div>
+    </div>
+    <div class="qfb" id="q10-fb"></div>
+  </div>
+</div>`
+}
+
+];
+
+const QA = {
+  q1:  { ok: 'No, funciona directo en el navegador', ex: '¡Correcto! claude.ai/code es 100% web. No necesitas instalar Node.js, npm ni nada en tu equipo.' },
+  q2:  { ok: 'No, Claude accede directo al repo en GitHub', ex: '¡Correcto! Claude se conecta a GitHub y lee los archivos directamente desde allí. No necesitas clonar nada.' },
+  q3:  { ok: 'En el idioma que prefieras, entiende español perfectamente', ex: '¡Correcto! Claude es multilingüe. Escríbele en español con total confianza.' },
+  q4:  { ok: 'Puede leer todos los archivos del repositorio que sean relevantes', ex: '¡Correcto! Claude puede leer cuantos archivos necesite para responder tu pregunta. No está limitado a uno.' },
+  q5:  { ok: 'El cambio se descarta y el archivo queda igual', ex: '¡Correcto! Rechazar el diff es completamente seguro. Nada se modifica hasta que tú lo apruebes.' },
+  q6:  { ok: 'Sí, puede crear el PR con título y descripción automáticamente', ex: '¡Correcto! Claude puede crear el PR completo en GitHub directamente desde el chat.' },
+  q7:  { ok: 'Se borra el historial del chat pero los archivos quedan igual', ex: '¡Correcto! /clear solo afecta el contexto de la conversación. Los archivos ya modificados permanecen sin cambios.' },
+  q8:  { ok: 'Automáticamente al inicio de cada sesión', ex: '¡Correcto! CLAUDE.md se carga solo cada vez que abres una sesión. Es contexto gratuito y persistente.' },
+  q9:  { ok: '/review', ex: '¡Correcto! /review activa un code review completo del código o PR actual con un solo comando.' },
+  q10: { ok: 'Abrir claude.ai/code, conectar el repo, describir el bug y que Claude lo encuentre y arregle directamente', ex: '¡Correcto! Ese es el poder de Claude Code Web: flujo completo sin salir del navegador ni instalar nada.' },
+};
+
+let cur = 0;
+const done = new Set(JSON.parse(localStorage.getItem('ccw_done') || '[]'));
+
+function save() { localStorage.setItem('ccw_done', JSON.stringify([...done])); }
+
+function renderSb() {
+  document.getElementById('lesson-list').innerHTML = LESSONS.map((l, i) => `
+    <div class="li ${i===cur?'active':''} ${done.has(i)?'done':''}" onclick="goto(${i})">
+      <div class="li-num">${done.has(i)?'✓':i+1}</div>
+      <div class="li-info"><div class="t">${l.title}</div><div class="s">${l.sub}</div></div>
+    </div>`).join('');
+  const pct = Math.round(done.size / LESSONS.length * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-txt').textContent = `${done.size} / ${LESSONS.length}`;
+}
+
+function renderPage() {
+  const l = LESSONS[cur];
+  document.getElementById('content').innerHTML = l.html() + `
+    <button id="done-btn" class="${done.has(cur)?'done':''}" onclick="completeLesson()">
+      ${done.has(cur) ? '✓ Completada' : '✅ Marcar como completada'}
+    </button>`;
+  document.getElementById('content').scrollTop = 0;
+  document.getElementById('crumb-n').textContent = cur + 1;
+  document.getElementById('prev-btn').disabled = cur === 0;
+  document.getElementById('next-btn').textContent = cur === LESSONS.length-1 ? '🏁 Finalizar' : 'Siguiente →';
+}
+
+function goto(i) {
+  cur = i;
+  renderSb();
+  renderPage();
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function nav(d) {
+  const n = cur + d;
+  if (n >= 0 && n < LESSONS.length) goto(n);
+}
+
+function completeLesson() {
+  done.add(cur);
+  save();
+  renderSb();
+  document.getElementById('done-btn').textContent = '✓ Completada';
+  document.getElementById('done-btn').classList.add('done');
+  const all = done.size === LESSONS.length;
+  document.getElementById('cel-em').textContent = all ? '🏆' : '🎉';
+  document.getElementById('cel-h').textContent = all ? '¡Curso completado!' : '¡Lección completada!';
+  document.getElementById('cel-p').textContent = all
+    ? '¡Dominas Claude Code Web! Ahora puedes usarlo para cualquier proyecto.'
+    : `Llevas ${done.size} de ${LESSONS.length} lecciones. ¡Sigue así!`;
+  document.getElementById('cel').classList.add('show');
+}
+
+function closeCel() {
+  document.getElementById('cel').classList.remove('show');
+  if (cur < LESSONS.length - 1) nav(1);
+}
+
+function chkQ(id, el, isOk) {
+  const box = document.getElementById(id);
+  if (box.classList.contains('answered')) return;
+  box.classList.add('answered');
+  box.querySelectorAll('.qopt').forEach(o => o.style.pointerEvents = 'none');
+  const a = QA[id];
+  const fb = document.getElementById(id + '-fb');
+  if (isOk) {
+    el.classList.add('ok');
+    fb.textContent = '✅ ' + a.ex;
+    fb.className = 'qfb show ok';
+  } else {
+    el.classList.add('no');
+    box.querySelectorAll('.qopt').forEach(o => { if (o.textContent.trim().includes(a.ok)) o.classList.add('ok'); });
+    fb.textContent = '❌ Incorrecto. ' + a.ex;
+    fb.className = 'qfb show no';
+  }
+}
+
+function toggleChk(el) {
+  el.classList.toggle('checked');
+  el.querySelector('.chk-box').textContent = el.classList.contains('checked') ? '✓' : '';
+}
+
+function cpCode(btn) {
+  const text = btn.closest('.cb').querySelector('pre').innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '¡Copiado!';
+    btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.classList.remove('ok'); }, 1500);
+  });
+}
+
+function toggleSb() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// init
+renderSb();
+renderPage();
+</script>
+</body>
+</html>
